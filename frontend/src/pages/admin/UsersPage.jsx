@@ -74,6 +74,17 @@ export default function UsersPage() {
     }
   }
 
+  async function toggleBlock(user) {
+    setError(''); setMessage('');
+    try {
+      const updated = await api.post(`/api/admin/users/${user.id}/toggle-block`, {});
+      setMessage(updated.enabled ? 'Usuário desbloqueado.' : 'Usuário bloqueado.');
+      load();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   return (
     <div>
       <div className="page-header">
@@ -91,7 +102,7 @@ export default function UsersPage() {
           {!users ? <Loading /> : (
             <table>
               <thead>
-                <tr><th>Nome</th><th>Usuário</th><th>Perfil</th><th></th></tr>
+                <tr><th>Nome</th><th>Usuário</th><th>Perfil</th><th>Status</th><th></th></tr>
               </thead>
               <tbody>
                 {users.map((u) => (
@@ -100,7 +111,13 @@ export default function UsersPage() {
                     <td>{u.username}</td>
                     <td>{u.role}</td>
                     <td>
+                      <span className="badge">{u.enabled ? 'Ativo' : 'Bloqueado'}</span>
+                    </td>
+                    <td>
                       <button className="btn btn-ghost btn-sm" onClick={() => edit(u)}>Editar</button>{' '}
+                      <button className="btn btn-ghost btn-sm" onClick={() => toggleBlock(u)}>
+                        {u.enabled ? 'Bloquear' : 'Desbloquear'}
+                      </button>{' '}
                       <button className="btn btn-danger btn-sm" onClick={() => remove(u)}>Remover</button>
                     </td>
                   </tr>
