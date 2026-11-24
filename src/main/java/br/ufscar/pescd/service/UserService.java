@@ -140,12 +140,32 @@ public class UserService {
         userRepository.delete(user);
     }
 
+    @Transactional
+    public User toggleBlockStatus(Long id, String loggedUsername) {
+        User user = findById(id);
+
+        if (user.getUsername().equals(loggedUsername)) {
+            throw new IllegalArgumentException("Você não pode bloquear ou desbloquear seu próprio usuário.");
+        }
+
+        boolean currentlyEnabled = !Boolean.FALSE.equals(user.getEnabled());
+        user.setEnabled(!currentlyEnabled);
+        return userRepository.save(user);
+    }
+
+    @Transactional
+    public PublicUserResponse toggleBlockStatusFromApi(Long id, String loggedUsername) {
+        return toPublicResponse(toggleBlockStatus(id, loggedUsername));
+    }
+
     private void applyForm(User user, UserForm form, boolean creating) {
         user.setFullName(form.getFullName());
         user.setEmail(form.getEmail());
         user.setUsername(form.getUsername());
         user.setRole(form.getRole());
-        user.setEnabled(true);
+        if (creating || user.getEnabled() == null) {
+            user.setEnabled(true);
+        }
 
         if (creating || (form.getPassword() != null && !form.getPassword().isBlank())) {
             user.setPassword(passwordEncoder.encode(form.getPassword()));
