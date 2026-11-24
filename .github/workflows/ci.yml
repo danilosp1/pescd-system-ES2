@@ -26,7 +26,7 @@ jobs:
         run: chmod +x mvnw
 
       - name: Executar testes de unidade
-        run: ./mvnw test -Dtest="!PescdApplicationTests"
+        run: ./mvnw test -Dtest="!PescdApplicationTests" -Dsurefire.failIfNoSpecifiedTests=false
 
   e2e-tests:
     name: Testes Web E2E (Playwright)
