@@ -248,6 +248,10 @@ public class SecretaryOfferService {
 
                 User student = userRepository.findByEmail(email).orElse(null);
                 if (student == null) {
+                    if (userRepository.existsByUsername(email)) {
+                        throw new IllegalArgumentException(
+                                "Linha " + lineNumber + ": já existe um usuário com este e-mail.");
+                    }
                     student = new User();
                     student.setFullName(fullName);
                     student.setEmail(email);
@@ -256,6 +260,9 @@ public class SecretaryOfferService {
                     student.setRole(UserRole.ALUNO);
                     student.setEnabled(true);
                     student = userRepository.save(student);
+                } else if (student.getRole() != UserRole.ALUNO) {
+                    throw new IllegalArgumentException(
+                            "Linha " + lineNumber + ": o e-mail informado pertence a um usuário que não é aluno.");
                 }
 
                 if (enroll(offer, student)) {
