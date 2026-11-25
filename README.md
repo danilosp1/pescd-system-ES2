@@ -70,4 +70,15 @@ conexão ao seu ambiente.
 psql -h localhost -p 5432 -U postgres -d pescd -v ON_ERROR_STOP=1 -f sql/issue-20-relatorio-reprovado.sql
 ```
 
+### Reprovação de plano (Mud2)
+
+Antes de iniciar esta versão com um banco PostgreSQL existente, aplique
+a atualização das restrições de status. Ela mantém as inscrições e o
+histórico e inclui o valor `PLANO_REPROVADO`. Ajuste os parâmetros de
+conexão ao seu ambiente.
+
+```sh
+psql -h localhost -p 5432 -U postgres -d pescd -v ON_ERROR_STOP=1 -f sql/issue-19-plano-reprovado.sql
+```
+
 Em um banco novo, o Hibernate cria as tabelas com o status atualizado.

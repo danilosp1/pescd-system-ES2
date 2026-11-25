@@ -148,9 +148,12 @@ public class StudentOfferService {
 
     @Transactional
     public void submitWorkPlan(Long offerStudentId, String username, WorkPlanForm form) {
-        OfferStudent enrollment = getEnrollment(offerStudentId, username);
+        OfferStudent enrollment = requireStudentEnrollment(
+                offerStudentRepository.findForUpdateById(offerStudentId), username);
         requireOfferInProgress(enrollment);
-        requireStatus(enrollment, StudentOfferStatus.NAO_ENVIADO);
+        requireStatusIn(enrollment, StudentOfferStatus.NAO_ENVIADO, StudentOfferStatus.PLANO_REPROVADO);
+
+        boolean resubmission = enrollment.getStatus() == StudentOfferStatus.PLANO_REPROVADO;
 
         User supervisor = userRepository.findById(form.getSupervisorId())
                 .filter(user -> user.getRole() == UserRole.PROFESSOR)
@@ -159,19 +162,26 @@ public class StudentOfferService {
         byte[] content = readPdf(form.getFile());
 
         WorkPlan workPlan = workPlanRepository.findByOfferStudent(enrollment).orElseGet(WorkPlan::new);
-        storageService.delete(workPlan.getFileFid());
+        String previousFid = workPlan.getFileFid();
+        String newFid = storageService.store(content, form.getFile().getOriginalFilename(),
+                form.getFile().getContentType());
+        scheduleFileCleanup(previousFid, newFid);
+
         workPlan.setOfferStudent(enrollment);
         workPlan.setDisciplineCode(form.getDisciplineCode());
         workPlan.setDisciplineName(form.getDisciplineName());
         workPlan.setDisciplineCourse(form.getDisciplineCourse());
         workPlan.setFileName(form.getFile().getOriginalFilename());
         workPlan.setContentType(form.getFile().getContentType());
-        workPlan.setFileFid(storageService.store(content, form.getFile().getOriginalFilename(),
-                form.getFile().getContentType()));
+        workPlan.setFileFid(newFid);
+        workPlan.setSupervisorParecer(null);
+        workPlan.setSupervisorApprovedAt(null);
+        workPlan.setSupervisorRejectedAt(null);
         workPlanRepository.save(workPlan);
 
         enrollment.setSupervisor(supervisor);
-        changeStatus(enrollment, StudentOfferStatus.PLANO_ENVIADO, "Plano de trabalho enviado");
+        changeStatus(enrollment, StudentOfferStatus.PLANO_ENVIADO,
+                resubmission ? "Plano de trabalho reenviado" : "Plano de trabalho enviado");
     }
 
     @Transactional
@@ -215,7 +225,7 @@ public class StudentOfferService {
         String previousFid = report.getFileFid();
         String newFid = storageService.store(content, form.getFile().getOriginalFilename(),
                 form.getFile().getContentType());
-        scheduleReportFileCleanup(previousFid, newFid);
+        scheduleFileCleanup(previousFid, newFid);
 
         report.setOfferStudent(enrollment);
         report.setFrequency(form.getFrequency());
@@ -233,7 +243,7 @@ public class StudentOfferService {
                 resubmission ? "Relatório final reenviado" : "Relatório final enviado");
     }
 
-    private void scheduleReportFileCleanup(String previousFid, String newFid) {
+    private void scheduleFileCleanup(String previousFid, String newFid) {
         if (Objects.equals(previousFid, newFid)) {
             return;
         }
@@ -279,6 +289,16 @@ public class StudentOfferService {
             throw new IllegalArgumentException(
                     "Ação indisponível: o status atual é \"" + enrollment.getStatus().getDisplayName() + "\".");
         }
+    }
+
+    private void requireStatusIn(OfferStudent enrollment, StudentOfferStatus... expected) {
+        for (StudentOfferStatus status : expected) {
+            if (enrollment.getStatus() == status) {
+                return;
+            }
+        }
+        throw new IllegalArgumentException(
+                "Ação indisponível: o status atual é \"" + enrollment.getStatus().getDisplayName() + "\".");
     }
 
     private byte[] readPdf(MultipartFile file) {

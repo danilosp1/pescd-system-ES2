@@ -130,6 +130,7 @@
     <div class="card" th:if="${enrollment.offer.status.name() == 'EM_ANDAMENTO'
                               and (enrollment.status.name() == 'NAO_ENVIADO'
                                    or enrollment.status.name() == 'PLANO_APROVADO'
+                                   or enrollment.status.name() == 'PLANO_REPROVADO'
                                    or enrollment.status.name() == 'RELATORIO_REPROVADO')}">
         <h2 th:text="#{studentOfferDetails.availableActions}">Ações disponíveis</h2>
         <div class="actions">
@@ -139,6 +140,8 @@
                th:href="@{/aluno/ofertas/{id}/documentacao(id=${enrollment.id})}" th:text="#{studentOfferDetails.sendDoc}">Enviar documentação</a>
             <a class="primary" th:if="${enrollment.status.name() == 'PLANO_APROVADO'}"
                th:href="@{/aluno/ofertas/{id}/relatorio(id=${enrollment.id})}" th:text="#{studentOfferDetails.sendReport}">Enviar relatório final</a>
+            <a class="primary" th:if="${enrollment.status.name() == 'PLANO_REPROVADO'}"
+               th:href="@{/aluno/ofertas/{id}/plano(id=${enrollment.id})}" th:text="#{studentPlan.resubmit}">Reenviar plano</a>
             <a class="primary" th:if="${enrollment.status.name() == 'RELATORIO_REPROVADO'}"
                th:href="@{/aluno/ofertas/{id}/relatorio(id=${enrollment.id})}" th:text="#{studentReport.resubmit}">Reenviar relatório</a>
         </div>
@@ -146,6 +149,10 @@
 
     <div class="card" th:if="${workPlan != null}">
         <h2 th:text="#{studentOfferDetails.workPlan}">Plano de trabalho</h2>
+        <div th:if="${enrollment.status.name() == 'PLANO_REPROVADO'}">
+            <strong th:text="#{studentPlan.rejectionReason}">Parecer da reprovação</strong>
+            <p style="white-space: pre-wrap" th:text="${workPlan.supervisorParecer}"></p>
+        </div>
         <p><strong th:text="#{studentOfferDetails.label.disciplineCode}">Código da disciplina:</strong> <span th:text="${workPlan.disciplineCode}"></span></p>
         <p><strong th:text="#{studentOfferDetails.label.disciplineName}">Nome da disciplina:</strong> <span th:text="${workPlan.disciplineName}"></span></p>
         <p><strong th:text="#{studentOfferDetails.label.course}">Curso:</strong> <span th:text="${workPlan.disciplineCourse}"></span></p>

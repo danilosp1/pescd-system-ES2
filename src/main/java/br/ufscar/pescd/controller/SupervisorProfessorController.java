@@ -112,6 +112,35 @@ public class SupervisorProfessorController {
         return "redirect:/professor/supervisor/dashboard";
     }
 
+    @PostMapping("/ofertas/{offerId}/alunos/{studentId}/reprovar-plano")
+    public String rejectPlan(
+            @PathVariable Long offerId,
+            @PathVariable Long studentId,
+            @Valid @ModelAttribute("form") ApprovePlanFormDTO form,
+            BindingResult bindingResult,
+            Model model,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes
+    ) {
+        User professor = resolveUser(authentication);
+
+        if (bindingResult.hasErrors()) {
+            OfferStudent os = supervisorProfessorService
+                    .getEnrollmentForSupervisor(offerId, studentId, professor);
+            WorkPlan plan = supervisorProfessorService.getWorkPlan(os);
+            model.addAttribute("offerStudent", os);
+            model.addAttribute("workPlan", plan);
+            return "professor/supervisor/approve-plan";
+        }
+
+        supervisorProfessorService.rejectPlan(offerId, studentId, professor, form.getParecer());
+
+        redirectAttributes.addFlashAttribute("successMessage",
+                "Plano de trabalho reprovado. O aluno poderá reenviar o plano.");
+
+        return "redirect:/professor/supervisor/dashboard";
+    }
+
     // -------------------------------------------------------------------------
     // Download do PDF do plano (usado nas telas PS.02 e PS.03)
     // -------------------------------------------------------------------------

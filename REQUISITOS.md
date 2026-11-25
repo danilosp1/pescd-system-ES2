@@ -114,7 +114,7 @@ O Sistema tem como objetivo automatizar o *workflow* para a contabilização de 
 | **PC-2** | Ter pelo menos uma oferta cadastrada. |
 | **Regras de Negócio** |  |
 | **RN-1** | As ofertas devem ser apresentadas em uma lista com suas principais informações. As ofertas podem estar nos seguintes status: “Em andamento” \- data de início \< data atual \< data de fim “Concluída” \- Secretário encerrou a oferta “Aguardando encerramento do secretário” \- Professor responsável concluiu a oferta e secretário ainda não encerrou. “Em atraso” \- data atual \> data de fim e o oferta ainda não foi concluída.  |
-| **RN-2** | Ao clicar em Detalhes de uma dada oferta, o sistema deve apresentar os alunos inscritos e o status de cada um. Um aluno pode estar nos seguintes status: “não enviado” \- quando o aluno não fez nenhum envio no sistema. “plano enviado” “plano aprovado” “documentação enviada” “relatório enviado” “relatório aprovado pelo supervisor” “concluído pelo responsável” Caso não tenha alunos inscritos, mostrar uma mensagem informando esta situação.  |
+| **RN-2** | Ao clicar em Detalhes de uma dada oferta, o sistema deve apresentar os alunos inscritos e o status de cada um. Um aluno pode estar nos seguintes status: “não enviado” \- quando o aluno não fez nenhum envio no sistema. “plano enviado” “plano aprovado” “plano reprovado” “documentação enviada” “relatório enviado” “relatório aprovado pelo supervisor” “concluído pelo responsável” Caso não tenha alunos inscritos, mostrar uma mensagem informando esta situação.  |
 | **RN-3** | Cada aluno tem um botão “Ver Detalhes” que deve mostrar todas as informações armazenadas sobre o aluno naquela oferta, inclusive logs de mudanças de status. |
 
 ## 
@@ -155,12 +155,13 @@ O Sistema tem como objetivo automatizar o *workflow* para a contabilização de 
 | **PC-1** | Estar logado no sistema.  |
 | **PC-2** | Estar inscrito em uma oferta. |
 | **PC-3** | Selecionar uma oferta com status “em andamento”. |
-| **PC-4** | O status do aluno nesta oferta deve ser “não enviado”.  |
+| **PC-4** | O status do aluno nesta oferta deve ser “não enviado” ou “plano reprovado”.  |
 | **Regras de Negócio** |  |
 | **RN-1** | O formulário deve conter os seguintes dados: Código da disciplina\* Nome da disciplina\* Curso da disciplina\* Professor supervisor\*  Arquivo com o plano\* |
 | **RN-2** | O professor supervisor deve ser selecionado da lista de professores no BD. |
 | **RN-3** | O arquivo com o plano deve ser um pdf com no máximo 5mb.  |
 | **RN-4** | O envio com sucesso deve mudar o status do aluno para “plano enviado”.  |
+| **RN-5** | Após uma reprovação do plano pelo supervisor, o aluno pode reenviar o plano; o novo envio volta o status para “plano enviado”. |
 
 ## 
 
@@ -213,7 +214,7 @@ O Sistema tem como objetivo automatizar o *workflow* para a contabilização de 
 
 ## 
 
-## **PS.02 \- COMO Professor Supervisor, EU QUERO aprovar o plano de trabalho, PARA o aluno iniciar o estágio.**
+## **PS.02 \- COMO Professor Supervisor, EU QUERO aprovar ou reprovar o plano de trabalho, PARA o aluno iniciar o estágio ou reenviar o plano.**
 
 | Pré-Condições |  |
 | :---: | :---- |
@@ -224,6 +225,8 @@ O Sistema tem como objetivo automatizar o *workflow* para a contabilização de 
 | **RN-2** | Ao clicar na ação “Aprovar Plano”, o sistema deve apresentar além do nome do aluno, os dados do plano inseridos na estória **\[AL.02\].** Estes dados são somente para leitura.  |
 | **RN-3** | O formulário tem os seguintes campos: Parecer\* O formulário também contém os botões Aprovar e Cancelar. O cancelar não faz nada e volta à tela anterior. |
 | **RN-4** | Ao aprovar, o status do aluno muda para “plano aprovado”, os dados preenchidos salvos no BD, e o sistema registra o timestamp da operação.  |
+| **RN-5** | O sistema deve apresentar também a ação “Reprovar Plano” quando o status do aluno for “plano enviado”. |
+| **RN-6** | Ao reprovar, o parecer é obrigatório; o status do aluno muda para “plano reprovado”, o parecer e o timestamp são salvos no BD e o sistema reabre o envio para um novo plano.  |
 
 ## 
 

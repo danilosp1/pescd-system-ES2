@@ -11,6 +11,7 @@ public record WorkPlanDetailsResponse(
         String contentType,
         LocalDateTime submittedAt,
         String supervisorParecer,
-        LocalDateTime supervisorApprovedAt
+        LocalDateTime supervisorApprovedAt,
+        LocalDateTime supervisorRejectedAt
 ) {
 }
