@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.RestController;
@@ -80,6 +82,20 @@ public class ApiExceptionHandler {
     ) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(buildResponse(HttpStatus.UNAUTHORIZED, "Nome de usuário ou senha inválidos.", request, null));
+    }
+
+    @ExceptionHandler({DisabledException.class, LockedException.class})
+    public ResponseEntity<ApiErrorResponse> handleDisabledOrLockedUser(
+            RuntimeException ex,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(buildResponse(
+                        HttpStatus.FORBIDDEN,
+                        "Usuário bloqueado. Entre em contato com o administrador do sistema.",
+                        request,
+                        null
+                ));
     }
 
     @ExceptionHandler(AccessDeniedException.class)

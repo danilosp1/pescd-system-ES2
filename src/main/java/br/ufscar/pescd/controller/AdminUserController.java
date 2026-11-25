@@ -1,6 +1,7 @@
 package br.ufscar.pescd.controller;
 
 import br.ufscar.pescd.dto.UserForm;
+import br.ufscar.pescd.entity.User;
 import br.ufscar.pescd.enums.UserRole;
 import br.ufscar.pescd.service.UserService;
 import jakarta.validation.Valid;
@@ -97,6 +98,23 @@ public class AdminUserController {
         try {
             userService.delete(id, authentication.getName());
             redirectAttributes.addFlashAttribute("successMessage", "Usuário removido com sucesso.");
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+
+        return "redirect:/admin/users";
+    }
+
+    @PostMapping("/{id}/toggle-block")
+    public String toggleBlock(
+            @PathVariable Long id,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            User updated = userService.toggleBlockStatus(id, authentication.getName());
+            String action = Boolean.TRUE.equals(updated.getEnabled()) ? "desbloqueado" : "bloqueado";
+            redirectAttributes.addFlashAttribute("successMessage", "Usuário " + action + " com sucesso.");
         } catch (IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
         }

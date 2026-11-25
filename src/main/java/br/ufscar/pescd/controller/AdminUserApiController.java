@@ -121,4 +121,21 @@ public class AdminUserApiController {
         userService.delete(id, authentication.getName());
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
+
+    @PostMapping("/{id}/toggle-block")
+    @Operation(summary = "Bloquear ou desbloquear usuário", description = "Alterna o status de bloqueio de um usuário, exceto o próprio usuário autenticado.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Status de bloqueio atualizado com sucesso.",
+                   content = @Content(schema = @Schema(implementation = PublicUserResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Tentativa de autobloqueio.",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado.",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public PublicUserResponse toggleBlock(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        return userService.toggleBlockStatusFromApi(id, authentication.getName());
+    }
 }
