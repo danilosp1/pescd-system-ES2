@@ -9,6 +9,7 @@ Este documento descreve quais ferramentas e agentes de Inteligência Artificial 
 | Ferramenta / Agente | Finalidade | Integrante(s) |
 | :--- | :--- | :--- |
 | **OpenCode (agente de IA)** | Análise do repositório, levantamento das issues, planejamento da implementação, revisão de código e apoio à redação de documentação. | Felipe |
+| **Antigravity** | Auxílio para acelerar execução de partes de issues e corrigir erros  | Danilo |
 
 > **Observação:** a tabela deve ser revisada por cada integrante para refletir apenas as ferramentas efetivamente utilizadas. Os demais integrantes podem complementar este documento ao longo da entrega final. Não foram compartilhados dados sensíveis, credenciais ou informações pessoais com as ferramentas de IA.
 
@@ -40,7 +41,8 @@ Este documento descreve quais ferramentas e agentes de Inteligência Artificial 
 
 ## 3. Uso de IA na Entrega Final (a ser atualizado)
 
-Durante a entrega final, este documento será atualizado para registrar o uso de IA nas atividades de implementação de testes de unidade e E2E, configuração de cobertura e CI, análise estática, implementação das mudanças, refatorações e correções de bugs.
+### 3.1. Corrigir erros no código
+- Utilizada para corrigir debugar erros que surgiram no código durante a implementação dos testes web usando Playwright, ao configurar os specs utilizando ´playwright codegen´.
 
 ---
 
