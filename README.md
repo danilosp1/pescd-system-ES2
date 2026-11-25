@@ -25,6 +25,18 @@ substituindo as telas Thymeleaf. Veja [`frontend/README.md`](frontend/README.md)
 cd frontend && npm install && npm run dev   # http://localhost:5173
 ```
 
+### Cobertura de testes
+
+O projeto usa JaCoCo para gerar o relatório de cobertura dos testes de unidade:
+
+```bash
+./mvnw test -Dtest="!PescdApplicationTests" -Dsurefire.failIfNoSpecifiedTests=false
+./mvnw jacoco:report
+```
+
+O relatório HTML fica em `target/site/jacoco/index.html` e o XML em
+`target/site/jacoco/jacoco.xml`.
+
 ### Armazenamento de arquivos no SeaweedFS
 
 Os arquivos PDF (plano de trabalho, documentação e relatório) **não são mais
