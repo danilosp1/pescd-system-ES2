@@ -44,6 +44,11 @@ Este documento descreve quais ferramentas e agentes de Inteligência Artificial 
 ### 3.1. Corrigir erros no código
 - Utilizada para corrigir debugar erros que surgiram no código durante a implementação dos testes web usando Playwright, ao configurar os specs utilizando ´playwright codegen´.
 
+### 3.2. Implementação da entrega final (Felipe)
+- Apoio na análise do repositório, planejamento das issues e revisão dos PRs da equipe.
+- Apoio na implementação da Mud2 (reprovação e reenvio do plano), na correção do bug de encerramento de oferta (S.04), na criação dos testes E2E com Playwright/PageObjects e na configuração do JaCoCo.
+- Todas as alterações foram revisadas e validadas por testes automatizados e pela pipeline de CI.
+
 ---
 
 *Documento atualizado continuamente ao longo do projeto.*
