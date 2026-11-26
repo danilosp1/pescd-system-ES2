@@ -88,8 +88,10 @@
     </div>
 
     <form th:action="@{/login}" method="post">
-        <input type="text" name="username" th:placeholder="#{login.username}" placeholder="Usuário" required>
-        <input type="password" name="password" th:placeholder="#{login.password}" placeholder="Senha" required>
+        <label for="username" th:text="#{login.username}">Usuário</label>
+        <input id="username" type="text" name="username" th:placeholder="#{login.username}" placeholder="Usuário" required>
+        <label for="password" th:text="#{login.password}">Senha</label>
+        <input id="password" type="password" name="password" th:placeholder="#{login.password}" placeholder="Senha" required>
 
         <button type="submit" th:text="#{login.submit}">
             Entrar
