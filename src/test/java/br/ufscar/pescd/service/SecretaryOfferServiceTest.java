@@ -36,6 +36,7 @@ public class SecretaryOfferServiceTest {
     private PasswordEncoder passwordEncoder;
     private StatusChangeLogRepository statusChangeLogRepository;
     private OfferApiMapper offerApiMapper;
+    private OfferClosureService offerClosureService;
     private SecretaryOfferService service;
 
     @BeforeEach
@@ -46,13 +47,15 @@ public class SecretaryOfferServiceTest {
         passwordEncoder = mock(PasswordEncoder.class);
         statusChangeLogRepository = mock(StatusChangeLogRepository.class);
         offerApiMapper = mock(OfferApiMapper.class);
+        offerClosureService = mock(OfferClosureService.class);
         service = new SecretaryOfferService(
                 offerRepository,
                 offerStudentRepository,
                 userRepository,
                 passwordEncoder,
                 statusChangeLogRepository,
-                offerApiMapper
+                offerApiMapper,
+                offerClosureService
         );
     }
 
@@ -172,20 +175,12 @@ public class SecretaryOfferServiceTest {
     }
 
     @Test
-    public void getCloseOfferPreviewReportsCanCloseAccordingToStatus() {
-        Offer waiting = createOffer(1L, OfferStatus.AGUARDANDO_ENCERRAMENTO_SECRETARIO);
-        Offer inProgress = createOffer(2L, OfferStatus.EM_ANDAMENTO);
+    public void getCloseOfferPreviewDelegatesToClosureService() {
+        SecretaryCloseOfferPreviewResponse expected =
+                new SecretaryCloseOfferPreviewResponse(null, true, "Instruções");
+        when(offerClosureService.getCloseOfferPreviewForApi(1L)).thenReturn(expected);
 
-        when(offerRepository.findById(1L)).thenReturn(Optional.of(waiting));
-        when(offerRepository.findById(2L)).thenReturn(Optional.of(inProgress));
-        when(offerApiMapper.toOfferSummary(any())).thenReturn(null);
-
-        SecretaryCloseOfferPreviewResponse first = service.getCloseOfferPreviewForApi(1L);
-        SecretaryCloseOfferPreviewResponse second = service.getCloseOfferPreviewForApi(2L);
-
-        assertTrue(first.canClose());
-        assertFalse(second.canClose());
-        assertTrue(first.instructions().contains("Confira os dados da oferta"));
+        assertSame(expected, service.getCloseOfferPreviewForApi(1L));
     }
 
     @Test
@@ -458,58 +453,26 @@ public class SecretaryOfferServiceTest {
     }
 
     @Test
-    public void closeOfferRejectsWhenNotAwaitingSecretary() {
-        Offer offer = createOffer(1L, OfferStatus.EM_ANDAMENTO);
-        when(offerRepository.findById(1L)).thenReturn(Optional.of(offer));
-
-        assertThrows(IllegalArgumentException.class, () -> service.closeOffer(1L));
-        verify(offerRepository, never()).save(any());
-    }
-
-    @Test
-    public void closeOfferWithoutUsernameClosesOffer() {
-        Offer offer = createOffer(1L, OfferStatus.AGUARDANDO_ENCERRAMENTO_SECRETARIO);
-        when(offerRepository.findById(1L)).thenReturn(Optional.of(offer));
-        when(offerRepository.save(offer)).thenReturn(offer);
-
+    public void closeOfferDelegatesToClosureService() {
         service.closeOffer(1L);
 
-        assertEquals(OfferStatus.CONCLUIDA, offer.getStatus());
-        assertNotNull(offer.getClosedAt());
-        assertNull(offer.getClosedBy());
+        verify(offerClosureService).closeOffer(1L);
     }
 
     @Test
-    public void closeOfferWithUsernameRegistersSecretary() {
-        Offer offer = createOffer(1L, OfferStatus.AGUARDANDO_ENCERRAMENTO_SECRETARIO);
-        User secretary = createUser(20L, "secretario", "sec@ufscar.br", UserRole.SECRETARIO);
-        when(offerRepository.findById(1L)).thenReturn(Optional.of(offer));
-        when(userRepository.findByUsername("secretario")).thenReturn(Optional.of(secretary));
-        when(offerRepository.save(offer)).thenReturn(offer);
+    public void closeOfferWithUsernameDelegatesToClosureService() {
+        Offer offer = createOffer(1L, OfferStatus.CONCLUIDA);
+        when(offerClosureService.closeOffer(1L, "secretario")).thenReturn(offer);
 
-        Offer saved = service.closeOffer(1L, "secretario");
-
-        assertSame(secretary, saved.getClosedBy());
+        assertSame(offer, service.closeOffer(1L, "secretario"));
     }
 
     @Test
-    public void closeOfferForApiMapsClosedOffer() {
-        Offer offer = createOffer(1L, OfferStatus.AGUARDANDO_ENCERRAMENTO_SECRETARIO);
-        when(offerRepository.findById(1L)).thenReturn(Optional.of(offer));
-        when(offerRepository.save(offer)).thenReturn(offer);
-        when(offerApiMapper.toOfferSummary(offer)).thenReturn(null);
+    public void closeOfferForApiDelegatesToClosureService() {
+        when(offerClosureService.closeOfferForApi(1L, "secretario")).thenReturn(null);
 
-        assertNull(service.closeOfferForApi(1L, null));
-        verify(offerApiMapper).toOfferSummary(offer);
-    }
-
-    @Test
-    public void closeOfferWithMissingSecretaryThrows() {
-        Offer offer = createOffer(1L, OfferStatus.AGUARDANDO_ENCERRAMENTO_SECRETARIO);
-        when(offerRepository.findById(1L)).thenReturn(Optional.of(offer));
-        when(userRepository.findByUsername("ausente")).thenReturn(Optional.empty());
-
-        assertThrows(IllegalArgumentException.class, () -> service.closeOffer(1L, "ausente"));
+        assertNull(service.closeOfferForApi(1L, "secretario"));
+        verify(offerClosureService).closeOfferForApi(1L, "secretario");
     }
 
     @Test
