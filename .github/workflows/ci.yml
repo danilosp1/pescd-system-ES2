@@ -28,6 +28,18 @@ jobs:
       - name: Executar testes de unidade
         run: ./mvnw test -Dtest="!PescdApplicationTests" -Dsurefire.failIfNoSpecifiedTests=false
 
+      - name: Gerar relatório de cobertura (JaCoCo)
+        if: always()
+        run: ./mvnw jacoco:report
+
+      - name: Publicar relatório de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+          retention-days: 14
+
   e2e-tests:
     name: Testes Web E2E (Playwright)
     runs-on: ubuntu-latest
