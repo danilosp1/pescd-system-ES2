@@ -2,7 +2,7 @@
 
 [Issue #11](https://github.com/danilosp1/pescd-system-ES2/issues/11) · 27/11/2026 · Commit testado `c3b6b1f`
 
-**Resultado:** 26 casos executados pela interface. 23 aprovados, 2 com defeitos reproduzidos e 1 inconclusivo.
+**Resultado após o reteste do J09:** 26 casos executados pela interface. 24 aprovados e 2 com defeitos reproduzidos.
 
 A sessão usou o frontend React e o backend Spring Boot locais, com PostgreSQL e SeaweedFS no ambiente de testes. As ações foram executadas no Chromium. A oferta **Sessão manual J - 27-11** e o cadastro **Aluno Manual J** foram criados durante a sessão para acompanhar as mudanças de estado. A análise de documentação usou uma inscrição de teste disponível.
 
@@ -18,7 +18,7 @@ Os critérios vieram de `REQUISITOS.md`. A sessão aplicou partições válidas 
 | J06 | **S.02**. Inscrever um aluno novo com nome, e-mail e RA de teste. | **Aprovado.** O aluno aparece na lista com status **Não enviado** e o total passa de zero para um. | [Aluno inscrito](evidencias/J06-aluno-adicionado.jpg) |
 | J07 | **S.02**. Repetir a inscrição com o mesmo e-mail na mesma oferta. | **Aprovado.** A mensagem informa que o aluno já está inscrito e o total permanece um. | [Duplicidade](evidencias/J07-inscricao-duplicada.jpg) |
 | J08 | **U.01 e AL.01**. Entrar com a conta do aluno criado e abrir a oferta em **Minhas ofertas**. | **Aprovado.** A inscrição abre com status **Não enviado** e oferece as opções de plano e documentação. | [Inscrição do aluno](evidencias/J08-aluno-nova-inscricao.jpg) |
-| J09 | **AL.02 RN-3**. Anexar um CSV em vez de PDF e enviar o plano. | **Inconclusivo.** A interface mostrou `Failed to fetch` e permaneceu no formulário. A captura registra a mensagem, mas a tentativa não confirmou a validação de formato. | [Tentativa com CSV](evidencias/J09-envio-csv-no-plano.jpg) |
+| J09 | **AL.02 RN-3**. Anexar um CSV em vez de PDF e enviar o plano. | **Aprovado no reteste.** O sistema recusou o CSV com a mensagem “O arquivo deve estar no formato PDF.” A inscrição permaneceu em **Não enviado**. | [Primeira tentativa](evidencias/J09-envio-csv-no-plano.jpg), [mensagem no reteste](evidencias/J09-a-reteste-csv.jpg), [status após o reteste](evidencias/J09-b-reteste-status.jpg) |
 | J10 | **AL.02**. Substituir pelo PDF de teste e enviar o plano. | **Aprovado.** **Plano enviado**, nome do PDF, supervisor e transição aparecem na inscrição. | [Plano enviado](evidencias/J10-plano-pdf-enviado.jpg) |
 | J11 | **PS.02 RN-3**. Abrir o plano como supervisor e tentar aprovar com parecer vazio. | **Aprovado.** O campo obrigatório impede a ação. O plano permanece enviado. | [Parecer obrigatório](evidencias/J11-parecer-obrigatorio.jpg) |
 | J12 | **PS.02 RN-4**. Informar parecer, aprovar e recarregar. | **Aprovado.** A transição para **Plano aprovado** aparece no histórico e se mantém após recarregar. | [Plano aprovado](evidencias/J12-plano-aprovado.jpg) |
@@ -36,6 +36,12 @@ Os critérios vieram de `REQUISITOS.md`. A sessão aplicou partições válidas 
 | J24 | **AD.01**. Editar o nome do aluno de teste, cancelar e reabrir o formulário. | **Aprovado.** A edição descartada dá lugar ao nome original ao reabrir. | [Rascunho](evidencias/J24-a-edicao-admin.jpg), [formulário reaberto](evidencias/J24-b-edicao-reaberta.jpg) |
 | J25 | **U.01**. Sair da área de administração e usar o botão Voltar do navegador. | **Aprovado.** O navegador apresenta a tela de login e a área administrativa não reaparece. | [Login após sair](evidencias/J25-sessao-encerrada.jpg) |
 | J26 | **PR.02**. Abrir documentação pendente, tentar concluir sem nota, selecionar B e enviar. | **Aprovado.** Nota vazia impede a submissão. Com nota válida, o sistema confirma a análise e registra a conclusão. | [Nota obrigatória](evidencias/J26-a-documentacao-sem-nota.jpg), [documentação concluída](evidencias/J26-b-documentacao-concluida.jpg) |
+
+## Reteste do J09
+
+A primeira tentativa ficou inconclusiva porque o formulário mostrou `Failed to fetch`.
+
+Na aba de navegador da conversa, entrei com a conta de teste de Lucas Ferreira e abri **Minhas ofertas → Algoritmo e Estrutura de Dados I → Enviar plano (AL.02)**. Preenchi os campos obrigatórios, selecionei Alexandre Levada como supervisor, anexei um CSV fictício e cliquei em **Enviar plano**. O formulário exibiu “O arquivo deve estar no formato PDF.” Ao voltar à inscrição, o status permanecia **Não enviado**, o plano continuava ausente e o histórico mostrava **Sem alterações registradas**. [Mensagem de rejeição](evidencias/J09-a-reteste-csv.jpg) · [Estado da inscrição](evidencias/J09-b-reteste-status.jpg)
 
 ## Defeitos reproduzidos
 
