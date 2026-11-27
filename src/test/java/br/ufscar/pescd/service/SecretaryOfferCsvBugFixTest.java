@@ -45,7 +45,8 @@ public class SecretaryOfferCsvBugFixTest {
                 userRepository,
                 passwordEncoder,
                 statusChangeLogRepository,
-                offerApiMapper
+                offerApiMapper,
+                mock(OfferClosureService.class)
         );
     }
 
