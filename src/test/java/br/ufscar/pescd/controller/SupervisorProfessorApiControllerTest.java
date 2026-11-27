@@ -58,6 +58,18 @@ class SupervisorProfessorApiControllerTest {
     }
 
     @Test
+    void delegatesPlanAndReportRejectionsWithResolvedProfessor() {
+        RejectPlanFormDTO plan = new RejectPlanFormDTO();
+        RejectReportFormDTO report = new RejectReportFormDTO();
+        OfferStudentSummaryResponse response = mock(OfferStudentSummaryResponse.class);
+        when(service.rejectPlanForApi(1L, 2L, professor, plan)).thenReturn(response);
+        when(service.rejectReport(1L, 2L, professor, report)).thenReturn(response);
+
+        assertSame(response, controller.rejectPlan(1L, 2L, plan, auth));
+        assertSame(response, controller.rejectReport(1L, 2L, report, auth));
+    }
+
+    @Test
     void downloadsAuthorizedFilesWithTheirNamesAndContents() {
         OfferStudent enrollment = new OfferStudent();
         when(service.getEnrollmentForSupervisor(1L, 2L, professor)).thenReturn(enrollment);

@@ -28,6 +28,7 @@ public class SupervisorProfessorServiceMud2Test {
     private WorkPlanRepository workPlanRepository;
     private ReportRepository reportRepository;
     private StatusChangeLogRepository statusChangeLogRepository;
+    private OfferApiMapper offerApiMapper;
     private SupervisorProfessorService service;
 
     private User professor;
@@ -41,12 +42,13 @@ public class SupervisorProfessorServiceMud2Test {
         workPlanRepository = mock(WorkPlanRepository.class);
         reportRepository = mock(ReportRepository.class);
         statusChangeLogRepository = mock(StatusChangeLogRepository.class);
+        offerApiMapper = mock(OfferApiMapper.class);
         service = new SupervisorProfessorService(
                 offerStudentRepository,
                 workPlanRepository,
                 reportRepository,
                 statusChangeLogRepository,
-                mock(OfferApiMapper.class)
+                offerApiMapper
         );
 
         professor = new User();
@@ -99,6 +101,15 @@ public class SupervisorProfessorServiceMud2Test {
         assertEquals(StudentOfferStatus.PLANO_REPROVADO, logCaptor.getValue().getNewStatus());
         assertEquals("Plano de trabalho reprovado pelo professor supervisor",
                 logCaptor.getValue().getDescription());
+    }
+
+    @Test
+    public void rejectPlanForApiDelegatesAndMapsEnrollment() {
+        mockEnrollmentAndPlan();
+        when(offerApiMapper.toOfferStudentSummary(enrollment)).thenReturn(null);
+
+        assertNull(service.rejectPlanForApi(10L, 5L, professor, new br.ufscar.pescd.dto.RejectPlanFormDTO()));
+        verify(offerApiMapper).toOfferStudentSummary(enrollment);
     }
 
     @Test
