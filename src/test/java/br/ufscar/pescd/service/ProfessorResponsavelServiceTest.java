@@ -220,11 +220,36 @@ class ProfessorResponsavelServiceTest {
     }
 
     @Test
-    void rejectsClosureWithUnfinishedStudents() {
-        offered();
+    void onePendingStudentBlocksTheClosurePreviewAndTheRequest() {
+        OfferStudent finished = new OfferStudent();
+        finished.setOffer(offer);
+        finished.setStatus(StudentOfferStatus.CONCLUIDO_RESPONSAVEL);
+        List<OfferStudent> students = List.of(finished, enrollment);
+        when(offers.findById(1L)).thenReturn(Optional.of(offer));
+        when(enrollments.findByOffer(offer)).thenReturn(students);
+
+        service.getCloseOfferSummaryForApi(1L, professor);
+        verify(mapper).toResponsibleCloseSummary(offer, students, false);
         assertThrows(IllegalArgumentException.class, () -> service.closeOffer(1L, professor, "Lições"));
         verify(offers, never()).save(any());
         assertEquals(OfferStatus.EM_ANDAMENTO, offer.getStatus());
+    }
+
+    @Test
+    void refusesClosureByAnotherProfessorEvenWhenAllStudentsAreFinished() {
+        offered();
+        enrollment.setStatus(StudentOfferStatus.CONCLUIDO_RESPONSAVEL);
+        User otherProfessor = new User();
+        otherProfessor.setId(9L);
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> service.closeOffer(1L, otherProfessor, "Lições"));
+
+        assertEquals("Você não é o responsável por esta oferta.", error.getMessage());
+        assertEquals(OfferStatus.EM_ANDAMENTO, offer.getStatus());
+        assertNull(offer.getClosureRequestedBy());
+        assertNull(offer.getClosureRequestedAt());
+        verify(offers, never()).save(any());
     }
 
     @Test

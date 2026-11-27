@@ -3,6 +3,7 @@ package br.ufscar.pescd.controller;
 import br.ufscar.pescd.dto.*;
 import br.ufscar.pescd.entity.*;
 import br.ufscar.pescd.enums.GradeOption;
+import br.ufscar.pescd.enums.OfferStatus;
 import br.ufscar.pescd.repository.UserRepository;
 import br.ufscar.pescd.service.ProfessorResponsavelService;
 import br.ufscar.pescd.storage.SeaweedFsStorageService;
@@ -13,6 +14,7 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
@@ -22,6 +24,8 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 class ProfessorResponsavelControllerTest {
     private final ProfessorResponsavelService service = mock(ProfessorResponsavelService.class);
@@ -153,6 +157,22 @@ class ProfessorResponsavelControllerTest {
         }
     }
 
+
+    @Test
+    void redisplaysTheOpenOfferWhenLessonsLearnedAreBlank() throws Exception {
+        offer.setStatus(OfferStatus.EM_ANDAMENTO);
+
+        MockMvcBuilders.standaloneSetup(controller).build()
+                .perform(post("/professor/responsavel/ofertas/1/encerrar")
+                        .principal(auth).param("lessonsLearned", "   "))
+                .andExpect(status().isOk())
+                .andExpect(view().name("professor/responsavel/close-offer"))
+                .andExpect(model().attributeHasFieldErrors("form", "lessonsLearned"))
+                .andExpect(model().attribute("offer", offer));
+
+        verify(service, never()).closeOffer(anyLong(), any(), any());
+        assertEquals(OfferStatus.EM_ANDAMENTO, offer.getStatus());
+    }
 
     @Test
     void closureSuccessAndBusinessFailureProduceAppropriateFlashMessages() {
