@@ -166,6 +166,30 @@ class ProfessorResponsavelServiceTest {
         assertConcluded(StudentOfferStatus.DOCUMENTACAO_ENVIADA);
     }
 
+    @Test
+    void refusesToReevaluateDocumentationAfterConclusion() {
+        enrolled();
+        enrollment.setStatus(StudentOfferStatus.CONCLUIDO_RESPONSAVEL);
+        Documentation document = new Documentation();
+        document.setResponsavelParecer("Parecer original");
+        document.setResponsavelNota(GradeOption.B);
+        when(documents.findByOfferStudent(enrollment)).thenReturn(Optional.of(document));
+        AnalyzeDocumentationFormDTO form = new AnalyzeDocumentationFormDTO();
+        form.setParecer("Novo parecer");
+        form.setNota(GradeOption.A);
+        form.setFrequencia(100);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.analyzeDocumentation(1L, 2L, professor, form));
+
+        assertEquals("Parecer original", document.getResponsavelParecer());
+        assertEquals(GradeOption.B, document.getResponsavelNota());
+        assertEquals(StudentOfferStatus.CONCLUIDO_RESPONSAVEL, enrollment.getStatus());
+        verify(documents, never()).save(any());
+        verify(enrollments, never()).save(any());
+        verifyNoInteractions(logs);
+    }
+
 
     @ParameterizedTest
     @ValueSource(strings = {" LUCAS ", "ferreira"})
