@@ -165,6 +165,7 @@ class StudentOfferServiceTest {
     @Test
     void refusesWorkPlanWhenSelectedSupervisorIsAStudent() {
         enrolled();
+        enrolledForUpdate();
         User candidate = new User();
         candidate.setId(3L);
         candidate.setRole(UserRole.ALUNO);
