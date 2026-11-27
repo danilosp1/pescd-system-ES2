@@ -139,14 +139,8 @@ public class StudentOfferController {
 
     @GetMapping("/{id}/relatorio")
     public String reportForm(@PathVariable Long id, Authentication authentication, Model model) {
-        OfferStudent enrollment = studentOfferService.getEnrollment(id, authentication.getName());
-        model.addAttribute("enrollment", enrollment);
-        model.addAttribute("workPlan", studentOfferService.getWorkPlan(enrollment));
-        model.addAttribute("logs", studentOfferService.getStatusLogs(enrollment));
-        if (!model.containsAttribute("reportForm")) {
-            model.addAttribute("reportForm", new ReportForm());
-        }
-        return "aluno/offers/relatorio";
+        model.addAttribute("reportForm", new ReportForm());
+        return renderReportForm(id, authentication, model);
     }
 
     @PostMapping("/{id}/relatorio")
@@ -176,6 +170,7 @@ public class StudentOfferController {
         model.addAttribute("enrollment", enrollment);
         model.addAttribute("workPlan", studentOfferService.getWorkPlan(enrollment));
         model.addAttribute("logs", studentOfferService.getStatusLogs(enrollment));
+        model.addAttribute("report", studentOfferService.getReport(enrollment));
         return "aluno/offers/relatorio";
     }
 

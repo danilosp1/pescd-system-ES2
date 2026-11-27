@@ -129,7 +129,8 @@
 
     <div class="card" th:if="${enrollment.offer.status.name() == 'EM_ANDAMENTO'
                               and (enrollment.status.name() == 'NAO_ENVIADO'
-                                   or enrollment.status.name() == 'PLANO_APROVADO')}">
+                                   or enrollment.status.name() == 'PLANO_APROVADO'
+                                   or enrollment.status.name() == 'RELATORIO_REPROVADO')}">
         <h2 th:text="#{studentOfferDetails.availableActions}">Ações disponíveis</h2>
         <div class="actions">
             <a class="primary" th:if="${enrollment.status.name() == 'NAO_ENVIADO'}"
@@ -138,6 +139,8 @@
                th:href="@{/aluno/ofertas/{id}/documentacao(id=${enrollment.id})}" th:text="#{studentOfferDetails.sendDoc}">Enviar documentação</a>
             <a class="primary" th:if="${enrollment.status.name() == 'PLANO_APROVADO'}"
                th:href="@{/aluno/ofertas/{id}/relatorio(id=${enrollment.id})}" th:text="#{studentOfferDetails.sendReport}">Enviar relatório final</a>
+            <a class="primary" th:if="${enrollment.status.name() == 'RELATORIO_REPROVADO'}"
+               th:href="@{/aluno/ofertas/{id}/relatorio(id=${enrollment.id})}" th:text="#{studentReport.resubmit}">Reenviar relatório</a>
         </div>
     </div>
 
@@ -164,6 +167,10 @@
 
     <div class="card" th:if="${report != null}">
         <h2 th:text="#{studentOfferDetails.report}">Relatório final</h2>
+        <div th:if="${enrollment.status.name() == 'RELATORIO_REPROVADO'}">
+            <strong th:text="#{studentReport.rejectionReason}">Parecer da reprovação</strong>
+            <p style="white-space: pre-wrap" th:text="${report.supervisorParecer}"></p>
+        </div>
         <p><strong th:text="#{studentOfferDetails.label.frequency}">Frequência:</strong> <span th:text="${report.frequency}"></span>%</p>
         <p><a class="secondary" th:href="@{/aluno/ofertas/{id}/relatorio/arquivo(id=${enrollment.id})}"
               target="_blank" th:text="#{studentOfferDetails.openReportPdf}">Abrir PDF do relatório</a></p>

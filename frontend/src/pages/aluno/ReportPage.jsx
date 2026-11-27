@@ -43,13 +43,15 @@ export default function ReportPage() {
   if (!data && !error) return <Loading />;
   if (!data) return <ErrorMessage>{error}</ErrorMessage>;
 
-  const { workPlan, statusLogs } = data;
+  const { offer, enrollment, workPlan, report, statusLogs } = data;
+  const resubmission = enrollment.status === 'RELATORIO_REPROVADO';
+  const canSubmit = offer.status === 'EM_ANDAMENTO' && (resubmission || enrollment.status === 'PLANO_APROVADO');
 
   return (
     <div>
       <div className="page-header">
         <div>
-          <h1>Enviar relatório final</h1>
+          <h1>{resubmission ? 'Reenviar relatório final' : 'Enviar relatório final'}</h1>
           <p>AL.04 — frequência (0–100) e PDF de até 5 MB.</p>
         </div>
         <Link className="btn btn-ghost" to={`/aluno/ofertas/${id}`}>Voltar</Link>
@@ -69,12 +71,20 @@ export default function ReportPage() {
         </div>
       )}
 
-      <div className="card" style={{ maxWidth: 620 }}>
+      {resubmission && report && (
+        <div className="card">
+          <h2 style={{ marginTop: 0, fontSize: 18 }}>Parecer da reprovação</h2>
+          <p style={{ whiteSpace: 'pre-wrap' }}>{report.supervisorParecer}</p>
+        </div>
+      )}
+
+      {canSubmit && <div className="card" style={{ maxWidth: 620 }}>
         <form onSubmit={handleSubmit}>
           <ErrorMessage>{error}</ErrorMessage>
           <div className="form-group">
-            <label>Frequência (%) *</label>
+            <label htmlFor="report-frequency">Frequência (%) *</label>
             <input
+              id="report-frequency"
               type="number"
               min="0"
               max="100"
@@ -84,16 +94,17 @@ export default function ReportPage() {
             />
           </div>
           <div className="form-group">
-            <label>Arquivo (PDF) *</label>
-            <input type="file" accept="application/pdf,.pdf" ref={fileRef} required />
+            <label htmlFor="report-file">Arquivo (PDF) *</label>
+            <input id="report-file" type="file" accept="application/pdf,.pdf" ref={fileRef} required />
           </div>
           <div className="form-actions">
             <button className="btn" type="submit" disabled={submitting}>
-              {submitting ? 'Enviando…' : 'Enviar relatório'}
+              {submitting ? 'Enviando…' : resubmission ? 'Reenviar relatório' : 'Enviar relatório'}
             </button>
           </div>
         </form>
-      </div>
+      </div>}
+      {!canSubmit && <ErrorMessage>O envio do relatório está indisponível nesta inscrição.</ErrorMessage>}
 
       <StatusHistory logs={statusLogs} />
     </div>

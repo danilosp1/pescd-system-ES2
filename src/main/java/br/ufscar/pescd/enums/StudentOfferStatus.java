@@ -6,6 +6,7 @@ public enum StudentOfferStatus {
     PLANO_APROVADO,
     DOCUMENTACAO_ENVIADA,
     RELATORIO_ENVIADO,
+    RELATORIO_REPROVADO,
     RELATORIO_APROVADO_SUPERVISOR,
     CONCLUIDO_RESPONSAVEL;
 
@@ -16,6 +17,7 @@ public enum StudentOfferStatus {
             case PLANO_APROVADO -> "Plano aprovado";
             case DOCUMENTACAO_ENVIADA -> "Documentação enviada";
             case RELATORIO_ENVIADO -> "Relatório enviado";
+            case RELATORIO_REPROVADO -> "Relatório reprovado";
             case RELATORIO_APROVADO_SUPERVISOR -> "Relatório aprovado pelo supervisor";
             case CONCLUIDO_RESPONSAVEL -> "Concluído pelo responsável";
         };

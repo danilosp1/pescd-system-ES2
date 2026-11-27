@@ -2,6 +2,7 @@ package br.ufscar.pescd.controller;
 
 import br.ufscar.pescd.dto.ApprovePlanFormDTO;
 import br.ufscar.pescd.dto.ApproveReportFormDTO;
+import br.ufscar.pescd.dto.RejectReportFormDTO;
 import br.ufscar.pescd.dto.SupervisorDashboardDTO;
 import br.ufscar.pescd.entity.*;
 import br.ufscar.pescd.enums.GradeOption;
@@ -147,25 +148,7 @@ public class SupervisorProfessorController {
             Model model,
             Authentication authentication
     ) {
-        User professor = resolveUser(authentication);
-
-        OfferStudent os = supervisorProfessorService
-                .getEnrollmentForSupervisor(offerId, studentId, professor);
-
-        WorkPlan plan = supervisorProfessorService.getWorkPlan(os);
-        Report report  = supervisorProfessorService.getReport(os);
-
-        ApproveReportFormDTO form = new ApproveReportFormDTO();
-        form.setFrequencia(report.getFrequency());   // pré-preenchido com valor do aluno
-
-        model.addAttribute("offerStudent", os);
-        model.addAttribute("workPlan", plan);
-        model.addAttribute("report", report);
-        model.addAttribute("statusLogs", supervisorProfessorService.getStatusLogs(os));
-        model.addAttribute("gradeOptions", GradeOption.values());
-        model.addAttribute("form", form);
-
-        return "professor/supervisor/approve-report";
+        return renderReportReview(offerId, studentId, resolveUser(authentication), model);
     }
 
     @PostMapping("/ofertas/{offerId}/alunos/{studentId}/aprovar-relatorio")
@@ -181,14 +164,7 @@ public class SupervisorProfessorController {
         User professor = resolveUser(authentication);
 
         if (bindingResult.hasErrors()) {
-            OfferStudent os = supervisorProfessorService
-                    .getEnrollmentForSupervisor(offerId, studentId, professor);
-            model.addAttribute("offerStudent", os);
-            model.addAttribute("workPlan", supervisorProfessorService.getWorkPlan(os));
-            model.addAttribute("report", supervisorProfessorService.getReport(os));
-            model.addAttribute("statusLogs", supervisorProfessorService.getStatusLogs(os));
-            model.addAttribute("gradeOptions", GradeOption.values());
-            return "professor/supervisor/approve-report";
+            return renderReportReview(offerId, studentId, professor, model);
         }
 
         supervisorProfessorService.approveReport(offerId, studentId, professor, form);
@@ -197,6 +173,46 @@ public class SupervisorProfessorController {
                 "Relatório aprovado com sucesso.");
 
         return "redirect:/professor/supervisor/dashboard";
+    }
+
+    @PostMapping("/ofertas/{offerId}/alunos/{studentId}/reprovar-relatorio")
+    public String rejectReport(
+            @PathVariable Long offerId,
+            @PathVariable Long studentId,
+            @Valid @ModelAttribute("rejectForm") RejectReportFormDTO form,
+            BindingResult bindingResult,
+            Model model,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes
+    ) {
+        User professor = resolveUser(authentication);
+        if (bindingResult.hasErrors()) {
+            return renderReportReview(offerId, studentId, professor, model);
+        }
+
+        supervisorProfessorService.rejectReport(offerId, studentId, professor, form);
+        redirectAttributes.addFlashAttribute("successMessage", "Relatório reprovado. O aluno pode reenviar o relatório.");
+        return "redirect:/professor/supervisor/dashboard";
+    }
+
+    private String renderReportReview(Long offerId, Long studentId, User professor, Model model) {
+        OfferStudent os = supervisorProfessorService.getEnrollmentForSupervisor(offerId, studentId, professor);
+        Report report = supervisorProfessorService.getReport(os);
+        model.addAttribute("offerStudent", os);
+        model.addAttribute("workPlan", supervisorProfessorService.getWorkPlan(os));
+        model.addAttribute("report", report);
+        model.addAttribute("statusLogs", supervisorProfessorService.getStatusLogs(os));
+        model.addAttribute("gradeOptions", GradeOption.values());
+
+        if (!model.containsAttribute("form")) {
+            ApproveReportFormDTO form = new ApproveReportFormDTO();
+            form.setFrequencia(report.getFrequency());
+            model.addAttribute("form", form);
+        }
+        if (!model.containsAttribute("rejectForm")) {
+            model.addAttribute("rejectForm", new RejectReportFormDTO());
+        }
+        return "professor/supervisor/approve-report";
     }
 
     // -------------------------------------------------------------------------

@@ -5,10 +5,12 @@ import br.ufscar.pescd.dto.ApproveReportFormDTO;
 import br.ufscar.pescd.dto.OfferDetailsResponse;
 import br.ufscar.pescd.dto.OfferStudentDetailsResponse;
 import br.ufscar.pescd.dto.OfferStudentSummaryResponse;
+import br.ufscar.pescd.dto.RejectReportFormDTO;
 import br.ufscar.pescd.dto.ReportDetailsResponse;
 import br.ufscar.pescd.dto.SupervisorDashboardDTO;
 import br.ufscar.pescd.dto.WorkPlanDetailsResponse;
 import br.ufscar.pescd.entity.*;
+import br.ufscar.pescd.enums.OfferStatus;
 import br.ufscar.pescd.enums.StudentOfferStatus;
 import br.ufscar.pescd.repository.*;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -84,9 +87,12 @@ public class SupervisorProfessorService {
 
     @Transactional(readOnly = true)
     public OfferStudent getEnrollmentForSupervisor(Long offerId, Long studentId, User professor) {
+        return requireSupervisorEnrollment(offerStudentRepository.findByOffer_IdAndStudent_Id(offerId, studentId),
+                professor);
+    }
 
-        OfferStudent os = offerStudentRepository
-                .findByOffer_IdAndStudent_Id(offerId, studentId)
+    private OfferStudent requireSupervisorEnrollment(Optional<OfferStudent> result, User professor) {
+        OfferStudent os = result
                 .orElseThrow(() -> new IllegalArgumentException("Inscrição não encontrada."));
 
         if (!professor.equals(os.getSupervisor())) {
@@ -162,14 +168,7 @@ public class SupervisorProfessorService {
 
     @Transactional
     public void approveReport(Long offerId, Long studentId, User professor, ApproveReportFormDTO form) {
-
-        OfferStudent os = getEnrollmentForSupervisor(offerId, studentId, professor);
-
-        if (os.getStatus() != StudentOfferStatus.RELATORIO_ENVIADO) {
-            throw new IllegalArgumentException(
-                    "Ação indisponível: o status atual é \""
-                    + os.getStatus().getDisplayName() + "\".");
-        }
+        OfferStudent os = getPendingReportEnrollment(offerId, studentId, professor);
 
         Report report = getReport(os);
         report.setSupervisorParecer(form.getParecer());
@@ -191,6 +190,33 @@ public class SupervisorProfessorService {
     ) {
         approveReport(offerId, studentId, professor, form);
         return offerApiMapper.toOfferStudentSummary(getEnrollmentForSupervisor(offerId, studentId, professor));
+    }
+
+    @Transactional
+    public OfferStudentSummaryResponse rejectReport(
+            Long offerId, Long studentId, User professor, RejectReportFormDTO form
+    ) {
+        OfferStudent os = getPendingReportEnrollment(offerId, studentId, professor);
+        if (os.getOffer().getStatus() != OfferStatus.EM_ANDAMENTO) {
+            throw new IllegalArgumentException("Esta ação só é permitida em ofertas em andamento.");
+        }
+
+        Report report = getReport(os);
+        report.setSupervisorParecer(form.getParecer().strip());
+        reportRepository.save(report);
+        changeStatus(os, StudentOfferStatus.RELATORIO_REPROVADO,
+                "Relatório reprovado pelo professor supervisor");
+        return offerApiMapper.toOfferStudentSummary(os);
+    }
+
+    private OfferStudent getPendingReportEnrollment(Long offerId, Long studentId, User professor) {
+        OfferStudent os = requireSupervisorEnrollment(
+                offerStudentRepository.findForUpdateByOffer_IdAndStudent_Id(offerId, studentId), professor);
+        if (os.getStatus() != StudentOfferStatus.RELATORIO_ENVIADO) {
+            throw new IllegalArgumentException(
+                    "Ação indisponível: o status atual é \"" + os.getStatus().getDisplayName() + "\".");
+        }
+        return os;
     }
 
     // -------------------------------------------------------------------------

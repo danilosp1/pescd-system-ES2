@@ -14,10 +14,15 @@ import br.ufscar.pescd.repository.*;
 import br.ufscar.pescd.storage.SeaweedFsStorageService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 @Service
 public class StudentOfferService {
@@ -103,7 +108,11 @@ public class StudentOfferService {
 
     @Transactional(readOnly = true)
     public OfferStudent getEnrollment(Long offerStudentId, String username) {
-        OfferStudent enrollment = offerStudentRepository.findById(offerStudentId)
+        return requireStudentEnrollment(offerStudentRepository.findById(offerStudentId), username);
+    }
+
+    private OfferStudent requireStudentEnrollment(Optional<OfferStudent> result, String username) {
+        OfferStudent enrollment = result
                 .orElseThrow(() -> new IllegalArgumentException("Inscrição não encontrada."));
 
         if (!enrollment.getStudent().getUsername().equals(username)) {
@@ -192,23 +201,59 @@ public class StudentOfferService {
 
     @Transactional
     public void submitReport(Long offerStudentId, String username, ReportForm form) {
-        OfferStudent enrollment = getEnrollment(offerStudentId, username);
+        OfferStudent enrollment = requireStudentEnrollment(
+                offerStudentRepository.findForUpdateById(offerStudentId), username);
         requireOfferInProgress(enrollment);
-        requireStatus(enrollment, StudentOfferStatus.PLANO_APROVADO);
+        boolean resubmission = enrollment.getStatus() == StudentOfferStatus.RELATORIO_REPROVADO;
+        if (!resubmission) {
+            requireStatus(enrollment, StudentOfferStatus.PLANO_APROVADO);
+        }
 
         byte[] content = readPdf(form.getFile());
 
         Report report = reportRepository.findByOfferStudent(enrollment).orElseGet(Report::new);
-        storageService.delete(report.getFileFid());
+        String previousFid = report.getFileFid();
+        String newFid = storageService.store(content, form.getFile().getOriginalFilename(),
+                form.getFile().getContentType());
+        scheduleReportFileCleanup(previousFid, newFid);
+
         report.setOfferStudent(enrollment);
         report.setFrequency(form.getFrequency());
         report.setFileName(form.getFile().getOriginalFilename());
         report.setContentType(form.getFile().getContentType());
-        report.setFileFid(storageService.store(content, form.getFile().getOriginalFilename(),
-                form.getFile().getContentType()));
+        report.setFileFid(newFid);
+        report.setSubmittedAt(LocalDateTime.now());
+        report.setSupervisorParecer(null);
+        report.setSupervisorFrequencia(null);
+        report.setSupervisorNotaSugestao(null);
+        report.setSupervisorApprovedAt(null);
         reportRepository.save(report);
 
-        changeStatus(enrollment, StudentOfferStatus.RELATORIO_ENVIADO, "Relatório final enviado");
+        changeStatus(enrollment, StudentOfferStatus.RELATORIO_ENVIADO,
+                resubmission ? "Relatório final reenviado" : "Relatório final enviado");
+    }
+
+    private void scheduleReportFileCleanup(String previousFid, String newFid) {
+        if (Objects.equals(previousFid, newFid)) {
+            return;
+        }
+
+        // O PDF anterior continua disponível até que o novo envio seja confirmado no banco.
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                if (previousFid != null) {
+                    storageService.delete(previousFid);
+                }
+            }
+
+            @Override
+            public void afterCompletion(int status) {
+                if (status == STATUS_ROLLED_BACK) {
+                    storageService.delete(newFid);
+                }
+            }
+        });
     }
 
     private void changeStatus(OfferStudent enrollment, StudentOfferStatus newStatus, String description) {

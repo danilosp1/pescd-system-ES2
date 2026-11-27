@@ -10,6 +10,7 @@ Este documento descreve quais ferramentas e agentes de Inteligência Artificial 
 | :--- | :--- | :--- |
 | **OpenCode (agente de IA)** | Análise do repositório, levantamento das issues, planejamento da implementação, revisão de código e apoio à redação de documentação. | Felipe |
 | **Antigravity** | Auxílio para acelerar execução de partes de issues e corrigir erros  | Danilo |
+| **Codex** | Apoio na implementação, nos testes e na atualização dos requisitos da Mud3. | Guilherme |
 | **Codex** | Apoio à implementação dos testes JUnit e Mockito de Aluno e Professores, execução e análise da cobertura JaCoCo e registro de problemas encontrados no H-3. | Guilherme |
 | **Codex** | Apoio aos testes Playwright e Page Objects de PS.02, PS.03 e PR.01 a PR.04, execução da suíte e registro de falha conhecida no I-3. | Guilherme |
 

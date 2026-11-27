@@ -3,7 +3,9 @@ package br.ufscar.pescd.repository;
 import br.ufscar.pescd.entity.Offer;
 import br.ufscar.pescd.entity.OfferStudent;
 import br.ufscar.pescd.entity.User;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +25,13 @@ public interface OfferStudentRepository extends JpaRepository<OfferStudent, Long
     List<OfferStudent> findBySupervisor(User supervisor);
 
     Optional<OfferStudent> findByOffer_IdAndStudent_Id(Long offerId, Long studentId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<OfferStudent> findForUpdateByOffer_IdAndStudent_Id(Long offerId, Long studentId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<OfferStudent> findForUpdateById(Long id);
+
 
     List<OfferStudent> findByOffer_ResponsibleProfessor(User responsibleProfessor);
 }

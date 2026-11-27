@@ -303,6 +303,22 @@
 
     </form>
 
+    <th:block th:if="${offerStudent.status.name() == 'RELATORIO_ENVIADO'
+                      and offerStudent.offer.status.name() == 'EM_ANDAMENTO'}">
+        <div class="section-title" th:text="#{rejectReport.heading}">Reprovação do relatório</div>
+        <form th:action="@{/professor/supervisor/ofertas/{oId}/alunos/{sId}/reprovar-relatorio(oId=${offerStudent.offer.id}, sId=${offerStudent.student.id})}"
+              th:object="${rejectForm}" method="post">
+            <div class="form-group">
+                <label for="rejectionReason" th:text="#{rejectReport.label}">Parecer da reprovação *</label>
+                <textarea id="rejectionReason" th:field="*{parecer}" required></textarea>
+                <p class="error" th:if="${#fields.hasErrors('parecer')}" th:errors="*{parecer}"></p>
+            </div>
+            <div class="actions">
+                <button type="submit" class="btn btn-secondary" th:text="#{rejectReport.submit}">Reprovar relatório</button>
+            </div>
+        </form>
+    </th:block>
+
 </div>
 
 </body>
