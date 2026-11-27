@@ -126,10 +126,10 @@
         <h2 th:text="#{respOfferDetails.enrolledStudents}">Alunos Inscritos</h2>
 
         <form method="get" style="margin-bottom:20px;">
+            <label for="searchName" th:text="#{respOfferDetails.searchLabel}">Buscar aluno pelo nome</label>
             <input type="text"
+                   id="searchName"
                    name="nome"
-                   th:placeholder="#{respOfferDetails.searchPlaceholder}"
-                   placeholder="Buscar aluno pelo nome"
                    th:value="${nome}"
                    style="padding:8px; width:300px;">
 
