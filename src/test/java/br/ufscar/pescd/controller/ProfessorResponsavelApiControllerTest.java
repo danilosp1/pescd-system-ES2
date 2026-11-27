@@ -9,12 +9,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class ProfessorResponsavelApiControllerTest {
     private final ProfessorResponsavelService service = mock(ProfessorResponsavelService.class);
@@ -52,6 +56,18 @@ class ProfessorResponsavelApiControllerTest {
         assertSame(closure, controller.closeSummary(1L, auth));
         assertSame(report, controller.reportDetails(1L, 2L, auth));
         assertSame(document, controller.documentationDetails(1L, 2L, auth));
+    }
+
+    @Test
+    void acceptsStudentSearchWithoutANameParameter() throws Exception {
+        OfferStudentSummaryResponse student = mock(OfferStudentSummaryResponse.class);
+        when(student.enrollmentId()).thenReturn(12L);
+        when(service.searchStudentsByNameForApi(1L, professor, null)).thenReturn(List.of(student));
+
+        MockMvcBuilders.standaloneSetup(controller).build()
+                .perform(get("/api/professor/responsavel/offers/1/students").principal(auth))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].enrollmentId").value(12));
     }
 
     @Test

@@ -9,6 +9,7 @@ import br.ufscar.pescd.storage.SeaweedFsStorageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
@@ -89,6 +90,22 @@ class ProfessorResponsavelControllerTest {
         assertEquals(name, model.get("nome"));
         controller.offerDetails(1L, "Marina", auth, model);
         assertEquals(List.of(), model.get("students"));
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = "   ")
+    void displaysAllOfferStudentsWhenTheNameFilterIsBlank(String name) {
+        User secondStudent = new User();
+        secondStudent.setFullName("Marina Costa");
+        OfferStudent secondEnrollment = new OfferStudent();
+        secondEnrollment.setStudent(secondStudent);
+        secondEnrollment.setOffer(offer);
+        List<OfferStudent> students = List.of(enrollment, secondEnrollment);
+        when(service.getOfferStudents(1L)).thenReturn(students);
+
+        assertEquals("professor/responsavel/offer-details", controller.offerDetails(1L, name, auth, model));
+        assertEquals(students, model.get("students"));
     }
 
     @Test

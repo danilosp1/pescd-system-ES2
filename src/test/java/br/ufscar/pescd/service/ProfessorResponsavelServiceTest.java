@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.security.access.AccessDeniedException;
@@ -174,6 +175,25 @@ class ProfessorResponsavelServiceTest {
         when(mapper.toOfferStudentSummary(enrollment)).thenReturn(response);
         assertEquals(List.of(response), service.searchStudentsByNameForApi(1L, professor, query));
         assertTrue(service.searchStudentsByNameForApi(1L, professor, "Marina").isEmpty());
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = "   ")
+    void returnsAllStudentsWhenTheSearchHasNoName(String query) {
+        User secondStudent = new User();
+        secondStudent.setFullName("Marina Costa");
+        OfferStudent secondEnrollment = new OfferStudent();
+        secondEnrollment.setStudent(secondStudent);
+        secondEnrollment.setOffer(offer);
+        when(offers.findById(1L)).thenReturn(Optional.of(offer));
+        when(enrollments.findByOffer(offer)).thenReturn(List.of(enrollment, secondEnrollment));
+        OfferStudentSummaryResponse first = mock(OfferStudentSummaryResponse.class);
+        OfferStudentSummaryResponse second = mock(OfferStudentSummaryResponse.class);
+        when(mapper.toOfferStudentSummary(enrollment)).thenReturn(first);
+        when(mapper.toOfferStudentSummary(secondEnrollment)).thenReturn(second);
+
+        assertEquals(List.of(first, second), service.searchStudentsByNameForApi(1L, professor, query));
     }
 
     @Test
