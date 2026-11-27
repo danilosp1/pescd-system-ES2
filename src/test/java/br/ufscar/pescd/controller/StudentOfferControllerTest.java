@@ -64,6 +64,28 @@ class StudentOfferControllerTest {
     }
 
     @Test
+    void redisplaysWorkPlanWithTheStudentsInput() {
+        WorkPlanForm form = new WorkPlanForm();
+        form.setDisciplineName("Engenharia de Software");
+        model.addAttribute("workPlanForm", form);
+
+        assertEquals("aluno/offers/plano", controller.workPlanForm(1L, auth, model));
+        assertSame(form, model.get("workPlanForm"));
+        assertEquals("Engenharia de Software", form.getDisciplineName());
+    }
+
+    @Test
+    void redisplaysDocumentationWithTheStudentsInput() {
+        DocumentationForm form = new DocumentationForm();
+        form.setInstitutionName("UFSCar");
+        model.addAttribute("documentationForm", form);
+
+        assertEquals("aluno/offers/documentacao", controller.documentationForm(1L, auth, model));
+        assertSame(form, model.get("documentationForm"));
+        assertEquals("UFSCar", form.getInstitutionName());
+    }
+
+    @Test
     void validationErrorsRedisplayFormsWithoutSubmitting() {
         when(binding.hasErrors()).thenReturn(true);
         assertEquals("aluno/offers/plano", controller.submitWorkPlan(1L, new WorkPlanForm(), binding, auth, model, redirect));
