@@ -4,24 +4,27 @@ import { StudentOffersPage } from '../pages/StudentOffersPage.js';
 import { StudentEnrollmentDetailsPage } from '../pages/StudentEnrollmentDetailsPage.js';
 import { DocumentationFormPage } from '../pages/DocumentationFormPage.js';
 import { samplePdfFile } from '../fixtures/samplePdf.js';
+import { createStudentScenario } from '../fixtures/studentScenario.js';
 
 test.describe('AL.03 - Envio da documentação comprobatória pelo aluno', () => {
   let loginPage;
   let studentOffersPage;
   let enrollmentDetailsPage;
   let documentationFormPage;
+  let scenario;
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, request }) => {
+    scenario = await createStudentScenario(request, 'AL03');
     loginPage = new LoginPage(page);
     studentOffersPage = new StudentOffersPage(page);
     enrollmentDetailsPage = new StudentEnrollmentDetailsPage(page);
     documentationFormPage = new DocumentationFormPage(page);
 
     await loginPage.goto();
-    await loginPage.login('alunodocumentacaoe2e', '123456');
+    await loginPage.login(scenario.student.email, scenario.student.ra);
     await loginPage.expectLoginSuccessful('/aluno/ofertas', 'ALUNO');
     await studentOffersPage.goto();
-    await studentOffersPage.openOffer('Algoritmo e Estrutura de Dados I');
+    await studentOffersPage.openOffer(scenario.offerName);
   });
 
   test('deve enviar a documentação em PDF e atualizar o status para documentação enviada', async ({ page }) => {
