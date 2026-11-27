@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.security.access.AccessDeniedException;
@@ -165,6 +166,30 @@ class ProfessorResponsavelServiceTest {
         assertConcluded(StudentOfferStatus.DOCUMENTACAO_ENVIADA);
     }
 
+    @Test
+    void refusesToReevaluateDocumentationAfterConclusion() {
+        enrolled();
+        enrollment.setStatus(StudentOfferStatus.CONCLUIDO_RESPONSAVEL);
+        Documentation document = new Documentation();
+        document.setResponsavelParecer("Parecer original");
+        document.setResponsavelNota(GradeOption.B);
+        when(documents.findByOfferStudent(enrollment)).thenReturn(Optional.of(document));
+        AnalyzeDocumentationFormDTO form = new AnalyzeDocumentationFormDTO();
+        form.setParecer("Novo parecer");
+        form.setNota(GradeOption.A);
+        form.setFrequencia(100);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.analyzeDocumentation(1L, 2L, professor, form));
+
+        assertEquals("Parecer original", document.getResponsavelParecer());
+        assertEquals(GradeOption.B, document.getResponsavelNota());
+        assertEquals(StudentOfferStatus.CONCLUIDO_RESPONSAVEL, enrollment.getStatus());
+        verify(documents, never()).save(any());
+        verify(enrollments, never()).save(any());
+        verifyNoInteractions(logs);
+    }
+
 
     @ParameterizedTest
     @ValueSource(strings = {" LUCAS ", "ferreira"})
@@ -174,6 +199,25 @@ class ProfessorResponsavelServiceTest {
         when(mapper.toOfferStudentSummary(enrollment)).thenReturn(response);
         assertEquals(List.of(response), service.searchStudentsByNameForApi(1L, professor, query));
         assertTrue(service.searchStudentsByNameForApi(1L, professor, "Marina").isEmpty());
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = "   ")
+    void returnsAllStudentsWhenTheSearchHasNoName(String query) {
+        User secondStudent = new User();
+        secondStudent.setFullName("Marina Costa");
+        OfferStudent secondEnrollment = new OfferStudent();
+        secondEnrollment.setStudent(secondStudent);
+        secondEnrollment.setOffer(offer);
+        when(offers.findById(1L)).thenReturn(Optional.of(offer));
+        when(enrollments.findByOffer(offer)).thenReturn(List.of(enrollment, secondEnrollment));
+        OfferStudentSummaryResponse first = mock(OfferStudentSummaryResponse.class);
+        OfferStudentSummaryResponse second = mock(OfferStudentSummaryResponse.class);
+        when(mapper.toOfferStudentSummary(enrollment)).thenReturn(first);
+        when(mapper.toOfferStudentSummary(secondEnrollment)).thenReturn(second);
+
+        assertEquals(List.of(first, second), service.searchStudentsByNameForApi(1L, professor, query));
     }
 
     @Test
@@ -200,11 +244,36 @@ class ProfessorResponsavelServiceTest {
     }
 
     @Test
-    void rejectsClosureWithUnfinishedStudents() {
-        offered();
+    void onePendingStudentBlocksTheClosurePreviewAndTheRequest() {
+        OfferStudent finished = new OfferStudent();
+        finished.setOffer(offer);
+        finished.setStatus(StudentOfferStatus.CONCLUIDO_RESPONSAVEL);
+        List<OfferStudent> students = List.of(finished, enrollment);
+        when(offers.findById(1L)).thenReturn(Optional.of(offer));
+        when(enrollments.findByOffer(offer)).thenReturn(students);
+
+        service.getCloseOfferSummaryForApi(1L, professor);
+        verify(mapper).toResponsibleCloseSummary(offer, students, false);
         assertThrows(IllegalArgumentException.class, () -> service.closeOffer(1L, professor, "Lições"));
         verify(offers, never()).save(any());
         assertEquals(OfferStatus.EM_ANDAMENTO, offer.getStatus());
+    }
+
+    @Test
+    void refusesClosureByAnotherProfessorEvenWhenAllStudentsAreFinished() {
+        offered();
+        enrollment.setStatus(StudentOfferStatus.CONCLUIDO_RESPONSAVEL);
+        User otherProfessor = new User();
+        otherProfessor.setId(9L);
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> service.closeOffer(1L, otherProfessor, "Lições"));
+
+        assertEquals("Você não é o responsável por esta oferta.", error.getMessage());
+        assertEquals(OfferStatus.EM_ANDAMENTO, offer.getStatus());
+        assertNull(offer.getClosureRequestedBy());
+        assertNull(offer.getClosureRequestedAt());
+        verify(offers, never()).save(any());
     }
 
     @Test

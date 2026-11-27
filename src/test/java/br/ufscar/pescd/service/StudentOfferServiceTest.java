@@ -155,6 +155,24 @@ class StudentOfferServiceTest {
     }
 
     @Test
+    void refusesWorkPlanWhenSelectedSupervisorIsAStudent() {
+        enrolled();
+        User candidate = new User();
+        candidate.setId(3L);
+        candidate.setRole(UserRole.ALUNO);
+        when(users.findById(3L)).thenReturn(Optional.of(candidate));
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> service.submitWorkPlan(1L, "aluno", planForm(pdfFile())));
+
+        assertEquals("Professor supervisor inválido.", error.getMessage());
+        assertEquals(StudentOfferStatus.NAO_ENVIADO, enrollment.getStatus());
+        assertNull(enrollment.getSupervisor());
+        verify(enrollments, never()).save(any());
+        verifyNoInteractions(storage, plans, logs);
+    }
+
+    @Test
     void reusesExistingPlanAndRemovesItsPreviousFile() {
         enrolled();
         when(users.findById(3L)).thenReturn(Optional.of(professor));
@@ -216,6 +234,22 @@ class StudentOfferServiceTest {
         assertThrows(IllegalArgumentException.class, () -> service.submitDocumentation(1L, "aluno", form));
         verifyNoInteractions(storage, documents, logs);
         verify(enrollments, never()).save(any());
+    }
+
+    @Test
+    void rejectsDocumentationOneByteAboveTheFiveMegabyteLimit() {
+        enrolled();
+        DocumentationForm form = new DocumentationForm();
+        form.setFile(new MockMultipartFile("file", "aulas.pdf", "application/pdf",
+                new byte[5 * 1024 * 1024 + 1]));
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> service.submitDocumentation(1L, "aluno", form));
+
+        assertEquals("O arquivo deve ter no máximo 5 MB.", error.getMessage());
+        assertEquals(StudentOfferStatus.NAO_ENVIADO, enrollment.getStatus());
+        verify(enrollments, never()).save(any());
+        verifyNoInteractions(storage, documents, logs);
     }
 
 

@@ -120,6 +120,21 @@ class SupervisorProfessorServiceTest {
         assertTransition(StudentOfferStatus.PLANO_ENVIADO, StudentOfferStatus.PLANO_APROVADO);
     }
 
+    @Test
+    void refusesASecondApprovalAndKeepsTheOriginalReview() {
+        enrolled();
+        WorkPlan plan = new WorkPlan();
+        when(plans.findByOfferStudent(enrollment)).thenReturn(Optional.of(plan));
+        service.approvePlan(1L, 2L, professor, "Parecer original");
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.approvePlan(1L, 2L, professor, "Outro parecer"));
+
+        assertEquals("Parecer original", plan.getSupervisorParecer());
+        verify(plans).save(plan);
+        assertTransition(StudentOfferStatus.PLANO_ENVIADO, StudentOfferStatus.PLANO_APROVADO);
+    }
+
 
     @Test
     void approvesReportAndPersistsFrequencyGradeAndReview() {

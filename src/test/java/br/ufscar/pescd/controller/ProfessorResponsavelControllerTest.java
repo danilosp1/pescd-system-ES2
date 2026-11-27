@@ -3,15 +3,18 @@ package br.ufscar.pescd.controller;
 import br.ufscar.pescd.dto.*;
 import br.ufscar.pescd.entity.*;
 import br.ufscar.pescd.enums.GradeOption;
+import br.ufscar.pescd.enums.OfferStatus;
 import br.ufscar.pescd.repository.UserRepository;
 import br.ufscar.pescd.service.ProfessorResponsavelService;
 import br.ufscar.pescd.storage.SeaweedFsStorageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
@@ -21,6 +24,8 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 class ProfessorResponsavelControllerTest {
     private final ProfessorResponsavelService service = mock(ProfessorResponsavelService.class);
@@ -91,6 +96,22 @@ class ProfessorResponsavelControllerTest {
         assertEquals(List.of(), model.get("students"));
     }
 
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = "   ")
+    void displaysAllOfferStudentsWhenTheNameFilterIsBlank(String name) {
+        User secondStudent = new User();
+        secondStudent.setFullName("Marina Costa");
+        OfferStudent secondEnrollment = new OfferStudent();
+        secondEnrollment.setStudent(secondStudent);
+        secondEnrollment.setOffer(offer);
+        List<OfferStudent> students = List.of(enrollment, secondEnrollment);
+        when(service.getOfferStudents(1L)).thenReturn(students);
+
+        assertEquals("professor/responsavel/offer-details", controller.offerDetails(1L, name, auth, model));
+        assertEquals(students, model.get("students"));
+    }
+
     @Test
     void deniesOfferDetailsForAnotherResponsibleProfessor() {
         User other = new User();
@@ -136,6 +157,22 @@ class ProfessorResponsavelControllerTest {
         }
     }
 
+
+    @Test
+    void redisplaysTheOpenOfferWhenLessonsLearnedAreBlank() throws Exception {
+        offer.setStatus(OfferStatus.EM_ANDAMENTO);
+
+        MockMvcBuilders.standaloneSetup(controller).build()
+                .perform(post("/professor/responsavel/ofertas/1/encerrar")
+                        .principal(auth).param("lessonsLearned", "   "))
+                .andExpect(status().isOk())
+                .andExpect(view().name("professor/responsavel/close-offer"))
+                .andExpect(model().attributeHasFieldErrors("form", "lessonsLearned"))
+                .andExpect(model().attribute("offer", offer));
+
+        verify(service, never()).closeOffer(anyLong(), any(), any());
+        assertEquals(OfferStatus.EM_ANDAMENTO, offer.getStatus());
+    }
 
     @Test
     void closureSuccessAndBusinessFailureProduceAppropriateFlashMessages() {

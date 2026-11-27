@@ -36,7 +36,22 @@ O teste existente PescdApplicationTests é um teste de contexto Spring que depen
 | ProfessorResponsavelController | Painel, valores sugeridos do supervisor, filtro por aluno, responsável incorreto, formulários, validação, avaliações finais, encerramento, erros de negócio, downloads e usuário ausente. |
 | ProfessorResponsavelApiController | Consultas, filtro por nome, resumo e solicitação de encerramento, avaliações finais, downloads e falhas de acesso. |
 
-## Resultado da execução
+## Cobertura após a PR 50
+
+Os testes adicionais verificam os limites de envio do aluno, a preservação dos formulários, a aprovação do plano uma única vez e a busca de alunos sem filtro. Também exercitam as recusas de encerramento e de reavaliação de documentação. A suíte Java passou de 240 para 256 casos.
+
+| Escopo do JaCoCo | Após a integração da PR 50 | Com os testes adicionais |
+| --- | --- | --- |
+| Projeto Java completo | 284 de 372 ramos (76,34%) | 298 de 372 ramos (80,11%) |
+| Serviços e controllers de Aluno e Professores | 95 de 114 ramos (83,33%) | 109 de 114 ramos (95,61%) |
+
+A medição inicial está na [execução da PR 50 na main](https://github.com/danilosp1/pescd-system-ES2/actions/runs/46020842731). Para reproduzir a medição do projeto completo no PowerShell, execute o mesmo conjunto de testes da CI e consulte o contador `BRANCH` na raiz de `target/site/jacoco/jacoco.xml`.
+
+```powershell
+.\mvnw.cmd clean test '-Dtest=!PescdApplicationTests' '-Dsurefire.failIfNoSpecifiedTests=false' jacoco:report
+```
+
+## Resultado da entrega original
 
 A execução limpa com Java 21, JUnit Jupiter 5.13.4 e Mockito passou com 148 testes de unidade, sendo 88 novos casos do H-3, sem falhas, erros ou testes ignorados. A compilação mantém o alvo Java 17 do projeto.
 
@@ -56,7 +71,7 @@ O escopo H-3 atingiu 80,21% de branch coverage, com 77 de 96 decisões. A cobert
 
 A cobertura de linhas ficou em 97,93%, com 709 de 724 linhas. Esses percentuais se referem às nove classes acima. O perfil executa a suíte de unidade inteira e restringe a medição e a meta de cobertura ao escopo desta issue.
 
-## Problemas encontrados
+## Problemas registrados na entrega original
 
 ### Arquivo anterior removido antes da confirmação do novo envio
 
