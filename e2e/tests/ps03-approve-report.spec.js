@@ -38,17 +38,21 @@ test.describe('PS.03 - Aprovação do relatório pelo supervisor', () => {
     expect(report.supervisorApprovedAt).toBeTruthy();
   });
 
-  test('deve impedir frequência acima de 100 e exigir parecer e nota', async () => {
+  test('deve exigir parecer, nota e frequência entre 0 e 100', async () => {
     await evaluation.reportForm.getByRole('button').click();
     expect(await evaluation.reportForm.getByRole('textbox').evaluate((input) => input.validity.valueMissing)).toBeTruthy();
     await evaluation.reportForm.getByRole('textbox').fill('Parecer preenchido');
     await evaluation.reportForm.getByRole('spinbutton').fill('95');
     await evaluation.reportForm.getByRole('button').click();
     expect(await evaluation.reportForm.getByRole('combobox').evaluate((input) => input.validity.valueMissing)).toBeTruthy();
-    await evaluation.reportForm.getByRole('spinbutton').fill('101');
+    const frequency = evaluation.reportForm.getByRole('spinbutton');
     await evaluation.reportForm.getByRole('combobox').selectOption('A');
+    await frequency.clear();
     await evaluation.reportForm.getByRole('button').click();
-    expect(await evaluation.reportForm.getByRole('spinbutton').evaluate((input) => input.validity.rangeOverflow)).toBeTruthy();
+    expect(await frequency.evaluate((input) => input.validity.valueMissing)).toBeTruthy();
+    await frequency.fill('101');
+    await evaluation.reportForm.getByRole('button').click();
+    expect(await frequency.evaluate((input) => input.validity.rangeOverflow)).toBeTruthy();
     await expect(evaluation.status).toHaveText('Relatório enviado');
   });
 
@@ -58,9 +62,15 @@ test.describe('PS.03 - Aprovação do relatório pelo supervisor', () => {
     await dashboard.expectStudentStatus(scenario.offerName, scenario.student.fullName, 'Relatório enviado');
   });
 
-  test('deve pré-preencher a frequência indicada pelo aluno conforme RN-3', async () => {
-    // Bug atual da interface React: a frequência começa vazia.
-    test.fail(true, 'PS.03 RN-3: o formulário não pré-preenche os 95% declarados pelo aluno.');
+  test('deve pré-preencher e salvar a frequência do aluno sem exigir edição', async ({ page }) => {
     await expect(evaluation.reportForm.getByRole('spinbutton')).toHaveValue('95');
+    await evaluation.reportForm.getByRole('textbox').fill('Frequência do aluno confirmada');
+    await evaluation.reportForm.getByRole('combobox').selectOption('A');
+    await evaluation.reportForm.getByRole('button').click();
+    await evaluation.expectStatus('Relatório aprovado pelo supervisor');
+
+    const response = await page.request.get(`/api/professor/supervisor/offers/${scenario.offerId}/students/${scenario.student.studentId}/report`);
+    await expect(response).toBeOK();
+    expect(await response.json()).toMatchObject({ supervisorFrequencia: 95 });
   });
 });

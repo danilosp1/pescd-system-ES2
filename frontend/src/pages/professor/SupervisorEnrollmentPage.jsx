@@ -17,8 +17,11 @@ export default function SupervisorEnrollmentPage() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [planParecer, setPlanParecer] = useState('');
-  const [reportForm, setReportForm] = useState({ parecer: '', frequencia: '', notaSugestao: '' });
+  const [reportForm, setReportForm] = useState({ parecer: '', frequencia: null, notaSugestao: '' });
   const [busy, setBusy] = useState(false);
+
+  // Uma edição vazia deve continuar vazia para a validação do formulário.
+  const confirmedFrequency = reportForm.frequencia ?? report?.frequency ?? '';
 
   async function load() {
     try {
@@ -53,7 +56,7 @@ export default function SupervisorEnrollmentPage() {
     try {
       await api.post(`${base}/report/approve`, {
         parecer: reportForm.parecer,
-        frequencia: Number(reportForm.frequencia),
+        frequencia: confirmedFrequency === '' ? null : Number(confirmedFrequency),
         notaSugestao: reportForm.notaSugestao,
       });
       setMessage('Relatório aprovado.');
@@ -141,7 +144,7 @@ export default function SupervisorEnrollmentPage() {
             <div className="form-row">
               <div className="form-group">
                 <label>Frequência confirmada (%) *</label>
-                <input type="number" min="0" max="100" value={reportForm.frequencia}
+                <input type="number" min="0" max="100" value={confirmedFrequency}
                   onChange={(e) => setReportForm((p) => ({ ...p, frequencia: e.target.value }))} required />
               </div>
               <div className="form-group">
