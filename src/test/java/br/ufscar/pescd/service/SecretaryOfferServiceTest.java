@@ -414,6 +414,38 @@ public class SecretaryOfferServiceTest {
     }
 
     @Test
+    public void importStudentsFromCsvRejectsExistingNonAlunoUser() {
+        Offer offer = createOffer(1L, OfferStatus.EM_ANDAMENTO);
+        User professor = createUser(30L, "prof", "prof@ufscar.br", UserRole.PROFESSOR);
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "alunos.csv", "text/csv",
+                "RA,NOME_COMPLETO,EMAIL\n123,Professor,prof@ufscar.br\n".getBytes());
+
+        when(offerRepository.findById(1L)).thenReturn(Optional.of(offer));
+        when(userRepository.findByEmail("prof@ufscar.br")).thenReturn(Optional.of(professor));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> service.importStudentsFromCsv(1L, file));
+        assertTrue(ex.getMessage().contains("usuário que não é aluno"));
+    }
+
+    @Test
+    public void importStudentsFromCsvRejectsUsernameConflictForNewEmail() {
+        Offer offer = createOffer(1L, OfferStatus.EM_ANDAMENTO);
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "alunos.csv", "text/csv",
+                "RA,NOME_COMPLETO,EMAIL\n123,Aluno,novo@ufscar.br\n".getBytes());
+
+        when(offerRepository.findById(1L)).thenReturn(Optional.of(offer));
+        when(userRepository.findByEmail("novo@ufscar.br")).thenReturn(Optional.empty());
+        when(userRepository.existsByUsername("novo@ufscar.br")).thenReturn(true);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> service.importStudentsFromCsv(1L, file));
+        assertTrue(ex.getMessage().contains("já existe um usuário"));
+    }
+
+    @Test
     public void importStudentsFromCsvRejectsInvalidColumns() {
         Offer offer = createOffer(1L, OfferStatus.EM_ANDAMENTO);
         when(offerRepository.findById(1L)).thenReturn(Optional.of(offer));
