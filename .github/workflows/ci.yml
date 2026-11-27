@@ -87,7 +87,7 @@ jobs:
       - name: Instalar dependências e iniciar Frontend (React/Vite na porta 5173)
         working-directory: frontend
         run: |
-          npm install
+          npm ci
           nohup npm run dev -- --host 0.0.0.0 --port 5173 > ../frontend.log 2>&1 &
           for i in {1..30}; do
             if curl -sf http://localhost:5173 > /dev/null; then
@@ -102,7 +102,7 @@ jobs:
         run: |
           if [ -d "e2e" ]; then
             cd e2e
-            npm install
+            npm ci
             npx playwright install --with-deps chromium
             npx playwright test
           else
