@@ -5,6 +5,7 @@ import br.ufscar.pescd.entity.*;
 import br.ufscar.pescd.enums.*;
 import br.ufscar.pescd.repository.*;
 import br.ufscar.pescd.storage.SeaweedFsStorageService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -53,6 +54,12 @@ class StudentOfferServiceTest {
         enrollment.setStudent(student);
         enrollment.setOffer(offer);
         enrollment.setStatus(StudentOfferStatus.NAO_ENVIADO);
+        TransactionSynchronizationManager.initSynchronization();
+    }
+
+    @AfterEach
+    void clearSynchronization() {
+        TransactionSynchronizationManager.clearSynchronization();
     }
 
     private void enrolled() {
@@ -135,6 +142,7 @@ class StudentOfferServiceTest {
     @Test
     void submitsPlanAndPersistsMetadataSupervisorAndHistory() {
         enrolled();
+        enrolledForUpdate();
         when(users.findById(3L)).thenReturn(Optional.of(professor));
         when(storage.store(pdf, "plano.pdf", "application/pdf")).thenReturn("new-fid");
         StudentEnrollmentDetailsResponse details = mock(StudentEnrollmentDetailsResponse.class);
@@ -174,12 +182,16 @@ class StudentOfferServiceTest {
 
     @Test
     void reusesExistingPlanAndRemovesItsPreviousFile() {
-        enrolled();
+        enrolledForUpdate();
         when(users.findById(3L)).thenReturn(Optional.of(professor));
+        when(storage.store(pdf, "plano.pdf", "application/pdf")).thenReturn("new");
         WorkPlan old = new WorkPlan();
         old.setFileFid("old");
         when(plans.findByOfferStudent(enrollment)).thenReturn(Optional.of(old));
         service.submitWorkPlan(1L, "aluno", planForm(pdfFile()));
+        verify(storage, never()).delete(any());
+        TransactionSynchronizationManager.getSynchronizations().forEach(
+                sync -> sync.afterCommit());
         verify(storage).delete("old");
         verify(plans).save(old);
     }
@@ -201,9 +213,12 @@ class StudentOfferServiceTest {
     @EnumSource(StudentOfferStatus.class)
     void enforcesTheRequiredEnrollmentStatusForEveryUpload(StudentOfferStatus status) {
         enrolled();
+        enrolledForUpdate();
         enrollment.setStatus(status);
-        if (status != StudentOfferStatus.NAO_ENVIADO) {
+        if (status != StudentOfferStatus.NAO_ENVIADO && status != StudentOfferStatus.PLANO_REPROVADO) {
             assertThrows(IllegalArgumentException.class, () -> service.submitWorkPlan(1L, "aluno", planForm(pdfFile())));
+        }
+        if (status != StudentOfferStatus.NAO_ENVIADO) {
             assertThrows(IllegalArgumentException.class, () -> service.submitDocumentation(1L, "aluno", new DocumentationForm()));
         }
         if (status != StudentOfferStatus.PLANO_APROVADO && status != StudentOfferStatus.RELATORIO_REPROVADO) {
@@ -290,12 +305,7 @@ class StudentOfferServiceTest {
         when(storage.store(pdf, "plano.pdf", "application/pdf")).thenReturn("report-fid");
         StudentEnrollmentDetailsResponse details = mock(StudentEnrollmentDetailsResponse.class);
         when(mapper.toStudentEnrollmentDetails(enrollment)).thenReturn(details);
-        TransactionSynchronizationManager.initSynchronization();
-        try {
-            assertSame(details, service.submitReportForApi(1L, "aluno", form));
-        } finally {
-            TransactionSynchronizationManager.clearSynchronization();
-        }
+        assertSame(details, service.submitReportForApi(1L, "aluno", form));
         ArgumentCaptor<Report> captor = ArgumentCaptor.forClass(Report.class);
         verify(reports).save(captor.capture());
         assertEquals(95, captor.getValue().getFrequency());

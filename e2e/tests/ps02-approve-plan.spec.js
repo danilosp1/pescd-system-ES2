@@ -41,7 +41,7 @@ test.describe('PS.02 - Aprovação do plano pelo supervisor', () => {
   });
 
   test('deve exigir o parecer antes de aprovar', async () => {
-    await page.getByRole('button', { name: '✓ Aprovar plano', exact: true }).click();
+    await evaluation.approvePlanButton.click();
     expect(await evaluation.planForm.getByRole('textbox').evaluate((input) => input.validity.valueMissing)).toBeTruthy();
     await expect(evaluation.status).toHaveText('Plano enviado');
   });
