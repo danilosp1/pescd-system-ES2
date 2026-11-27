@@ -3,6 +3,7 @@ package br.ufscar.pescd.controller;
 import br.ufscar.pescd.dto.*;
 import br.ufscar.pescd.entity.*;
 import br.ufscar.pescd.enums.GradeOption;
+import br.ufscar.pescd.enums.StudentOfferStatus;
 import br.ufscar.pescd.repository.UserRepository;
 import br.ufscar.pescd.service.SupervisorProfessorService;
 import br.ufscar.pescd.storage.SeaweedFsStorageService;
@@ -12,6 +13,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
@@ -21,6 +23,8 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 class SupervisorProfessorControllerTest {
     private final SupervisorProfessorService service = mock(SupervisorProfessorService.class);
@@ -74,6 +78,22 @@ class SupervisorProfessorControllerTest {
                 controller.approvePlan(1L, 2L, form, binding, model, auth, redirect));
         verify(service).approvePlan(1L, 2L, professor, "Aprovado");
         assertTrue(redirect.getFlashAttributes().containsKey("successMessage"));
+    }
+
+    @Test
+    void redisplaysPendingPlanWhenTheOpinionIsMissing() throws Exception {
+        enrollment.setStatus(StudentOfferStatus.PLANO_ENVIADO);
+
+        MockMvcBuilders.standaloneSetup(controller).build()
+                .perform(post("/professor/supervisor/ofertas/1/alunos/2/aprovar-plano").principal(auth))
+                .andExpect(status().isOk())
+                .andExpect(view().name("professor/supervisor/approve-plan"))
+                .andExpect(model().attributeHasFieldErrors("form", "parecer"))
+                .andExpect(model().attribute("offerStudent", enrollment))
+                .andExpect(model().attribute("workPlan", plan));
+
+        verify(service, never()).approvePlan(anyLong(), anyLong(), any(), any());
+        assertEquals(StudentOfferStatus.PLANO_ENVIADO, enrollment.getStatus());
     }
 
     @ParameterizedTest
