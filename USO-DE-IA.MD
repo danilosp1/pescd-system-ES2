@@ -10,6 +10,7 @@ Este documento descreve quais ferramentas e agentes de Inteligência Artificial 
 | :--- | :--- | :--- |
 | **OpenCode (agente de IA)** | Análise do repositório, levantamento das issues, planejamento da implementação, revisão de código e apoio à redação de documentação. | Felipe |
 | **Antigravity** | Auxílio para acelerar execução de partes de issues e corrigir erros  | Danilo |
+| **Codex** | Apoio aos testes Playwright e Page Objects de PS.02, PS.03 e PR.01 a PR.04, execução da suíte e registro de falha conhecida no I-3. | Guilherme |
 
 > **Observação:** a tabela deve ser revisada por cada integrante para refletir apenas as ferramentas efetivamente utilizadas. Os demais integrantes podem complementar este documento ao longo da entrega final. Não foram compartilhados dados sensíveis, credenciais ou informações pessoais com as ferramentas de IA.
 
