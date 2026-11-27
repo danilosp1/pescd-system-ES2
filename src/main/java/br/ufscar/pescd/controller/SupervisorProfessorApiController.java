@@ -2,6 +2,7 @@ package br.ufscar.pescd.controller;
 
 import br.ufscar.pescd.dto.ApprovePlanFormDTO;
 import br.ufscar.pescd.dto.ApproveReportFormDTO;
+import br.ufscar.pescd.dto.RejectReportFormDTO;
 import br.ufscar.pescd.dto.OfferDetailsResponse;
 import br.ufscar.pescd.dto.OfferStudentDetailsResponse;
 import br.ufscar.pescd.dto.OfferStudentSummaryResponse;
@@ -140,6 +141,17 @@ public class SupervisorProfessorApiController {
     ) {
         return supervisorProfessorService.approveReportForApi(
                 offerId, studentId, resolveUser(authentication), form);
+    }
+
+    @PostMapping("/{offerId}/students/{studentId}/report/reject")
+    @Operation(summary = "Reprovar relatório", description = "Registra o parecer e libera um novo envio do relatório.")
+    public OfferStudentSummaryResponse rejectReport(
+            @PathVariable Long offerId,
+            @PathVariable Long studentId,
+            @Valid @RequestBody RejectReportFormDTO form,
+            Authentication authentication
+    ) {
+        return supervisorProfessorService.rejectReport(offerId, studentId, resolveUser(authentication), form);
     }
 
     @GetMapping("/{offerId}/students/{studentId}/report/download")

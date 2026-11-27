@@ -38,7 +38,7 @@ public class Report {
     @Column(name = "file_fid")
     private String fileFid;
 
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false)
     private LocalDateTime submittedAt;
 
     // -------------------------------------------------------------------------
@@ -79,6 +79,8 @@ public class Report {
 
     @PrePersist
     protected void onCreate() {
-        this.submittedAt = LocalDateTime.now();
+        if (submittedAt == null) {
+            submittedAt = LocalDateTime.now();
+        }
     }
 }

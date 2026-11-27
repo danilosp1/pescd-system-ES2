@@ -21,6 +21,8 @@ export default function EnrollmentDetailsPage() {
 
   const { offer, enrollment, workPlan, documentation, report, statusLogs } = data;
   const status = enrollment.status;
+  const reportRejected = status === 'RELATORIO_REPROVADO';
+  const canSendReport = offer.status === 'EM_ANDAMENTO' && (status === 'PLANO_APROVADO' || reportRejected);
 
   return (
     <div>
@@ -46,8 +48,10 @@ export default function EnrollmentDetailsPage() {
                 </Link>
               </>
             )}
-            {status === 'PLANO_APROVADO' && (
-              <Link className="btn" to={`/aluno/ofertas/${id}/relatorio`}>Enviar relatório (AL.04)</Link>
+            {canSendReport && (
+              <Link className="btn" to={`/aluno/ofertas/${id}/relatorio`}>
+                {reportRejected ? 'Reenviar relatório' : 'Enviar relatório (AL.04)'}
+              </Link>
             )}
           </div>
         </div>
@@ -101,6 +105,9 @@ export default function EnrollmentDetailsPage() {
             <dt>Frequência</dt><dd>{report.frequency}%</dd>
             <dt>Enviado em</dt><dd>{formatDateTime(report.submittedAt)}</dd>
             <dt>Arquivo</dt><dd>{report.fileName}</dd>
+            {reportRejected && (
+              <><dt>Parecer da reprovação</dt><dd style={{ whiteSpace: 'pre-wrap' }}>{report.supervisorParecer}</dd></>
+            )}
           </dl>
         )}
       </FileCard>

@@ -5,7 +5,7 @@ import { formatDateTime, GRADE_OPTIONS } from '../../utils/format.js';
 import { ErrorMessage, Loading, SuccessMessage, StatusBadge } from '../../components/Feedback.jsx';
 import { InfoGrid, StatusTimeline, SectionTitle } from '../../components/DataGrid.jsx';
 
-// PS.02 (aprovar plano) e PS.03 (aprovar relatório) do professor supervisor.
+// PS.02 (aprovar plano) e PS.03 (avaliar relatório) do professor supervisor.
 // Espelha as telas approve-plan.html e approve-report.html.
 export default function SupervisorEnrollmentPage() {
   const { offerId, studentId } = useParams();
@@ -18,6 +18,7 @@ export default function SupervisorEnrollmentPage() {
   const [message, setMessage] = useState('');
   const [planParecer, setPlanParecer] = useState('');
   const [reportForm, setReportForm] = useState({ parecer: '', frequencia: '', notaSugestao: '' });
+  const [rejectionReason, setRejectionReason] = useState('');
   const [busy, setBusy] = useState(false);
 
   async function load() {
@@ -57,6 +58,17 @@ export default function SupervisorEnrollmentPage() {
         notaSugestao: reportForm.notaSugestao,
       });
       setMessage('Relatório aprovado.');
+      await load();
+    } catch (err) { setError(err.message); } finally { setBusy(false); }
+  }
+
+  async function rejectReport(event) {
+    event.preventDefault();
+    setError(''); setMessage(''); setBusy(true);
+    try {
+      await api.post(`${base}/report/reject`, { parecer: rejectionReason.trim() });
+      setMessage('Relatório reprovado. O aluno pode reenviar o relatório.');
+      setRejectionReason('');
       await load();
     } catch (err) { setError(err.message); } finally { setBusy(false); }
   }
@@ -104,6 +116,9 @@ export default function SupervisorEnrollmentPage() {
           <InfoGrid items={[
             { label: 'Frequência indicada pelo aluno', value: `${report.frequency}%` },
             { label: 'Enviado em', value: formatDateTime(report.submittedAt) },
+            ...(status === 'RELATORIO_REPROVADO'
+              ? [{ label: 'Parecer da reprovação', value: report.supervisorParecer, span2: true }]
+              : []),
           ]} />
           <button className="btn btn-ghost btn-sm" style={{ marginTop: 12 }}
             onClick={() => openAuthenticatedFile(`${base}/report/download`)}>
@@ -154,6 +169,22 @@ export default function SupervisorEnrollmentPage() {
               </div>
             </div>
             <button className="btn" type="submit" disabled={busy}>✓ Aprovar relatório</button>
+          </form>
+        </div>
+      )}
+
+      {status === 'RELATORIO_ENVIADO' && offer.status === 'EM_ANDAMENTO' && report && (
+        <div className="card" style={{ maxWidth: 720 }}>
+          <SectionTitle>Reprovação do relatório</SectionTitle>
+          <form onSubmit={rejectReport}>
+            <div className="form-group">
+              <label htmlFor="rejection-reason">Parecer da reprovação *</label>
+              <textarea id="rejection-reason" value={rejectionReason} rows={4} required
+                onChange={(event) => setRejectionReason(event.target.value)} />
+            </div>
+            <button className="btn btn-ghost" type="submit" disabled={busy || !rejectionReason.trim()}>
+              Reprovar relatório
+            </button>
           </form>
         </div>
       )}
