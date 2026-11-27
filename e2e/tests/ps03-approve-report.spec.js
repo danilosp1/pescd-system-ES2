@@ -1,0 +1,66 @@
+import { test, expect } from '@playwright/test';
+import { LoginPage } from '../pages/LoginPage.js';
+import { SupervisorDashboardPage } from '../pages/SupervisorDashboardPage.js';
+import { SupervisorEvaluationPage } from '../pages/SupervisorEvaluationPage.js';
+import { createProfessorScenario } from '../fixtures/professorScenario.js';
+
+test.describe('PS.03 - Aprovação do relatório pelo supervisor', () => {
+  let scenario;
+  let dashboard;
+  let evaluation;
+
+  test.beforeEach(async ({ page, request }) => {
+    scenario = await createProfessorScenario(request, 'PS03', 'report');
+    const login = new LoginPage(page);
+    dashboard = new SupervisorDashboardPage(page);
+    evaluation = new SupervisorEvaluationPage(page);
+    await login.goto();
+    await login.login('alevada', '123456');
+    await login.expectLoginSuccessful('/professor/supervisor', 'PROFESSOR');
+    await dashboard.openStudent(scenario.offerName, scenario.student.fullName, 'Aprovar relatório');
+  });
+
+  test('deve apresentar o plano, o relatório e salvar frequência, sugestão de nota e parecer', async ({ page }) => {
+    await evaluation.expectPlanDetails();
+    await expect(page.locator('.card').filter({ hasText: 'Relatório final (enviado pelo aluno)' })).toContainText('95%');
+    await expect(page.getByRole('button', { name: /Visualizar PDF do Relatório/ })).toBeVisible();
+    await evaluation.approveReport({ parecer: 'Relatório aprovado pelo E2E', frequency: 90, grade: 'B' });
+    await evaluation.expectStatus('Relatório aprovado pelo supervisor');
+    await page.reload();
+    await expect(evaluation.status).toHaveText('Relatório aprovado pelo supervisor');
+    await expect(evaluation.reportForm).toHaveCount(0);
+    const response = await page.request.get(`/api/professor/supervisor/offers/${scenario.offerId}/students/${scenario.student.studentId}/report`);
+    await expect(response).toBeOK();
+    const report = await response.json();
+    expect(report.supervisorParecer).toBe('Relatório aprovado pelo E2E');
+    expect(report.supervisorFrequencia).toBe(90);
+    expect(report.supervisorNotaSugestao).toBe('B');
+    expect(report.supervisorApprovedAt).toBeTruthy();
+  });
+
+  test('deve impedir frequência acima de 100 e exigir parecer e nota', async () => {
+    await evaluation.reportForm.getByRole('button').click();
+    expect(await evaluation.reportForm.getByRole('textbox').evaluate((input) => input.validity.valueMissing)).toBeTruthy();
+    await evaluation.reportForm.getByRole('textbox').fill('Parecer preenchido');
+    await evaluation.reportForm.getByRole('spinbutton').fill('95');
+    await evaluation.reportForm.getByRole('button').click();
+    expect(await evaluation.reportForm.getByRole('combobox').evaluate((input) => input.validity.valueMissing)).toBeTruthy();
+    await evaluation.reportForm.getByRole('spinbutton').fill('101');
+    await evaluation.reportForm.getByRole('combobox').selectOption('A');
+    await evaluation.reportForm.getByRole('button').click();
+    expect(await evaluation.reportForm.getByRole('spinbutton').evaluate((input) => input.validity.rangeOverflow)).toBeTruthy();
+    await expect(evaluation.status).toHaveText('Relatório enviado');
+  });
+
+  test('deve voltar sem alterar o relatório enviado', async () => {
+    await evaluation.reportForm.getByRole('textbox').fill('Rascunho');
+    await evaluation.goBack();
+    await dashboard.expectStudentStatus(scenario.offerName, scenario.student.fullName, 'Relatório enviado');
+  });
+
+  test('deve pré-preencher a frequência indicada pelo aluno conforme RN-3', async () => {
+    // Bug atual da interface React: a frequência começa vazia.
+    test.fail(true, 'PS.03 RN-3: o formulário não pré-preenche os 95% declarados pelo aluno.');
+    await expect(evaluation.reportForm.getByRole('spinbutton')).toHaveValue('95');
+  });
+});

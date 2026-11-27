@@ -25,6 +25,7 @@ import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
@@ -92,6 +93,11 @@ public class DataInitializer implements CommandLineRunner {
         User aluno3 = upsertUser("João Lima", "joao.lima@estudante.ufscar.br", "jlima", "123456", UserRole.ALUNO);
         User aluno4 = upsertUser("Beatriz Costa", "beatriz.costa@estudante.ufscar.br", "bcosta", "123456", UserRole.ALUNO);
 
+        // Alunos dedicados aos testes E2E, para não alterar os status dos seeds usados em S.03.
+        User alunoPlanoE2E = upsertUser("Aluno Plano E2E", "aluno.plano.e2e@estudante.ufscar.br", "alunoplanoe2e", "123456", UserRole.ALUNO);
+        User alunoDocE2E = upsertUser("Aluno Documentação E2E", "aluno.doc.e2e@estudante.ufscar.br", "alunodocumentacaoe2e", "123456", UserRole.ALUNO);
+        User alunoRelatorioE2E = upsertUser("Aluno Relatório E2E", "aluno.relatorio.e2e@estudante.ufscar.br", "alunorelatorioe2e", "123456", UserRole.ALUNO);
+
         removeLegacyMockOffers();
 
         Offer offer1 = upsertOffer(
@@ -126,6 +132,14 @@ public class DataInitializer implements CommandLineRunner {
                 professorEndo,
                 admin
         );
+        Offer offerEncerramento = upsertOffer(
+                "Oferta em encerramento (E2E)",
+                "2026/2",
+                LocalDate.of(2026, 8, 1),
+                LocalDate.of(2026, 12, 15),
+                professorNaldi,
+                admin
+        );
 
         enroll(aluno1, offer1, StudentOfferStatus.NAO_ENVIADO);
         enroll(aluno2, offer1, StudentOfferStatus.NAO_ENVIADO);
@@ -155,6 +169,20 @@ public class DataInitializer implements CommandLineRunner {
         // --- Seed PR.02: João Lima em offer2 com DOCUMENTACAO_ENVIADA (Prof. Naldi é responsável) ---
         OfferStudent seedPR02 = enroll(aluno3, offer2, StudentOfferStatus.DOCUMENTACAO_ENVIADA);
         seedDocumentation(seedPR02);
+
+        // --- Seeds E2E (AL.02, AL.03, AL.04) ---
+        enroll(alunoPlanoE2E, offer1, StudentOfferStatus.NAO_ENVIADO);
+        enroll(alunoDocE2E, offer1, StudentOfferStatus.NAO_ENVIADO);
+        OfferStudent seedRelatorioE2E = enrollWithSupervisor(
+                alunoRelatorioE2E, offer1, professorLevada, StudentOfferStatus.PLANO_APROVADO);
+        seedApprovedWorkPlan(seedRelatorioE2E);
+
+        // --- Seed E2E (S.04): oferta pronta para encerramento pelo secretário ---
+        offerEncerramento.setStatus(OfferStatus.AGUARDANDO_ENCERRAMENTO_SECRETARIO);
+        offerEncerramento.setClosureRequestedAt(LocalDateTime.now().minusDays(1));
+        offerEncerramento.setClosureRequestedBy(professorNaldi);
+        offerRepository.save(offerEncerramento);
+        enroll(aluno4, offerEncerramento, StudentOfferStatus.CONCLUIDO_RESPONSAVEL);
     }
 
     private User upsertUser(
@@ -229,6 +257,17 @@ public class DataInitializer implements CommandLineRunner {
         workPlan.setContentType("application/pdf");
         workPlan.setFileFid(fid);
         workPlanRepository.save(workPlan);
+    }
+
+    private void seedApprovedWorkPlan(OfferStudent offerStudent) {
+        seedWorkPlan(offerStudent);
+        workPlanRepository.findByOfferStudent(offerStudent).ifPresent(plan -> {
+            if (plan.getSupervisorApprovedAt() == null) {
+                plan.setSupervisorParecer("Plano aprovado para fins de teste E2E.");
+                plan.setSupervisorApprovedAt(LocalDateTime.now().minusDays(1));
+                workPlanRepository.save(plan);
+            }
+        });
     }
 
     private void seedReport(OfferStudent offerStudent) {

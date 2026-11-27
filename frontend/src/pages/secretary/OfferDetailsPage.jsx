@@ -10,6 +10,7 @@ export default function OfferDetailsPage() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [studentForm, setStudentForm] = useState({ fullName: '', email: '', ra: '' });
+  const [closePreview, setClosePreview] = useState(null);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef(null);
 
@@ -55,10 +56,23 @@ export default function OfferDetailsPage() {
     }
   }
 
-  async function closeOffer() {
+  async function openClosePreview() {
     setError(''); setMessage(''); setBusy(true);
     try {
-      await api.post(`${base}/close`, {});
+      const preview = await api.get(`${base}/close`);
+      setClosePreview(preview);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirmCloseOffer() {
+    setError(''); setMessage(''); setBusy(true);
+    try {
+      await api.post(`${base}/close`, { confirm: true });
+      setClosePreview(null);
       setMessage('Oferta encerrada com sucesso.');
       load();
     } catch (err) {
@@ -92,11 +106,28 @@ export default function OfferDetailsPage() {
             <StatusBadge label={offer.statusLabel} />{' '}
             <span className="muted">Responsável: {offer.responsibleProfessor?.fullName || '—'}</span>
           </div>
-          <button className="btn btn-danger btn-sm" onClick={closeOffer} disabled={busy}>
-            Encerrar oferta
-          </button>
+          {offer.status === 'AGUARDANDO_ENCERRAMENTO_SECRETARIO' && (
+            <button className="btn btn-danger btn-sm" onClick={openClosePreview} disabled={busy}>
+              Encerrar oferta
+            </button>
+          )}
         </div>
       </div>
+
+      {closePreview && (
+        <div className="card" data-testid="close-offer-confirmation">
+          <h2 style={{ marginTop: 0, fontSize: 18 }}>Confirmar encerramento</h2>
+          <p>{closePreview.instructions}</p>
+          <div className="form-actions">
+            <button className="btn btn-danger" onClick={confirmCloseOffer} disabled={busy}>
+              Confirmar encerramento
+            </button>
+            <button className="btn btn-ghost" onClick={() => setClosePreview(null)} disabled={busy}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="card">
         <h2 style={{ marginTop: 0, fontSize: 18 }}>Alunos inscritos ({students.length})</h2>
