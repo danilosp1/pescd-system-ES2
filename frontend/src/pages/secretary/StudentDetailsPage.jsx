@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../../api/client.js';
-import { formatDateTime } from '../../utils/format.js';
 import { ErrorMessage, Loading, StatusBadge } from '../../components/Feedback.jsx';
+import StatusHistory from '../../components/StatusHistory.jsx';
 
 // Detalhes de um aluno da oferta vistos pelo secretário (espelha
 // secretary/offers/student-details.html): dados do aluno + histórico de status.
@@ -42,28 +42,7 @@ export default function StudentDetailsPage() {
         </dl>
       </div>
 
-      <div className="card">
-        <h2 style={{ marginTop: 0, fontSize: 18 }}>Histórico de status</h2>
-        {statusLogs.length === 0 ? (
-          <p className="muted">Nenhuma alteração de status registrada.</p>
-        ) : (
-          <table>
-            <thead>
-              <tr><th>Status anterior</th><th>Novo status</th><th>Descrição</th><th>Data</th></tr>
-            </thead>
-            <tbody>
-              {statusLogs.map((log) => (
-                <tr key={log.id}>
-                  <td>{log.previousStatusLabel || '—'}</td>
-                  <td>{log.newStatusLabel}</td>
-                  <td>{log.description}</td>
-                  <td>{formatDateTime(log.changedAt)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <StatusHistory logs={statusLogs} variant="secretary" />
     </div>
   );
 }

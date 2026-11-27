@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api, openAuthenticatedFile } from '../../api/client.js';
-import { formatDateTime } from '../../utils/format.js';
 import { ErrorMessage, Loading } from '../../components/Feedback.jsx';
+import StatusHistory from '../../components/StatusHistory.jsx';
 
 // AL.04 - Envio do relatório final (frequência 0-100, PDF <= 5MB), com leitura
 // do plano de trabalho e do histórico de status.
@@ -95,28 +95,7 @@ export default function ReportPage() {
         </form>
       </div>
 
-      <div className="card">
-        <h2 style={{ marginTop: 0, fontSize: 18 }}>Histórico de status</h2>
-        {statusLogs.length === 0 ? (
-          <p className="muted">Sem alterações registradas.</p>
-        ) : (
-          <table>
-            <thead>
-              <tr><th>Quando</th><th>De</th><th>Para</th><th>Descrição</th></tr>
-            </thead>
-            <tbody>
-              {statusLogs.map((log) => (
-                <tr key={log.id}>
-                  <td>{formatDateTime(log.changedAt)}</td>
-                  <td>{log.previousStatusLabel || '—'}</td>
-                  <td>{log.newStatusLabel}</td>
-                  <td>{log.description}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <StatusHistory logs={statusLogs} />
     </div>
   );
 }
