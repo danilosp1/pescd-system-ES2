@@ -29,14 +29,14 @@ Os arquivos seguem os testes existentes da equipe, com describe por história, P
 
 A fixture professorScenario prepara ofertas e alunos exclusivos pela API real. A ação principal de cada cenário ocorre no navegador, com verificações de status, histórico e persistência. Cada execução usa identificadores únicos e pode repetir o I-3 sem resetar o banco.
 
-Os comentários explicam apenas a preparação dos dados, a repetição dos testes e a falha conhecida.
+Os comentários explicam a preparação dos dados e a repetição dos testes.
 
 ## Validação local
 
-A suíte completa executou 32 cenários em Chromium, com 31 aprovações e uma falha esperada de PS.03. Nenhum teste foi ignorado e não houve falhas inesperadas nem casos instáveis. O I-3 acrescenta 19 cenários.
+O I-3 acrescentou 19 cenários. A suíte completa passou com 32 cenários em Chromium após o aprimoramento #54.
 
-## Falha conhecida
+## Frequência na aprovação do relatório
 
-PS.03 RN-3 pede que a frequência indicada pelo aluno apareça preenchida. A interface React inicializa esse campo vazio. O cenário específico usa `test.fail` com justificativa e executa a asserção esperada de 95%. Se o problema for corrigido, o Playwright apontará um sucesso inesperado para que a marcação seja removida.
+O teste de PS.03 RN-3 verifica que o campo inicia com os 95% enviados pelo aluno e que a aprovação grava esse valor quando o supervisor o confirma sem editar. Outros cenários verificam a edição do valor e a validação de campo obrigatório.
 
 O retorno sem salvar usa o link Voltar disponível nas telas.
