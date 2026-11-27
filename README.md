@@ -58,3 +58,16 @@ e `reports`. O acesso é encapsulado em `SeaweedFsStorageService`
 > ALTER TABLE documentations DROP COLUMN file_content;
 > ALTER TABLE reports        DROP COLUMN file_content;
 > ```
+
+### Reprovação de relatório (Mud3)
+
+Antes de iniciar esta versão com um banco PostgreSQL existente, aplique
+a atualização das restrições de status. Ela mantém as inscrições e o
+histórico e inclui o valor `RELATORIO_REPROVADO`. Ajuste os parâmetros de
+conexão ao seu ambiente.
+
+```sh
+psql -h localhost -p 5432 -U postgres -d pescd -v ON_ERROR_STOP=1 -f sql/issue-20-relatorio-reprovado.sql
+```
+
+Em um banco novo, o Hibernate cria as tabelas com o status atualizado.

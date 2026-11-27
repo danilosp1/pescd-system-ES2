@@ -186,11 +186,12 @@ O Sistema tem como objetivo automatizar o *workflow* para a contabilização de 
 | **PC-1** | Estar logado no sistema.  |
 | **PC-2** | Estar inscrito em uma oferta. |
 | **PC-3** | Selecionar uma oferta com status “em andamento”. |
-| **PC-4** | O status do aluno nesta oferta deve ser “plano aprovado”.  |
+| **PC-4** | O status do aluno nesta oferta deve ser “plano aprovado” ou “relatório reprovado”. |
 | **Regras de Negócio** |  |
 | **RN-1** | A tela apresenta dados (leitura) sobre a oferta, o plano enviado, e mudanças de status.    O formulário deve conter os seguintes dados: Indicador de frequência\* (0 a 100%) Arquivo com o relatório\* |
 | **RN-2** | O arquivo com o relatório deve ser um pdf com no máximo 5mb.  |
 | **RN-4** | O envio com sucesso deve mudar o status do aluno para “relatório enviado”.  |
+| **RN-5** | Se o relatório for reprovado, o aluno pode consultar o parecer do supervisor e reenviar o relatório. O novo envio substitui o PDF e a frequência e registra a mudança de status no histórico. |
 
 ## 
 
@@ -226,7 +227,7 @@ O Sistema tem como objetivo automatizar o *workflow* para a contabilização de 
 
 ## 
 
-## **PS.03 \- COMO Professor Supervisor, EU QUERO aprovar o relatório do estágio, PARA dar andamento a finalização do estágio.**
+## **PS.03 \- COMO Professor Supervisor, EU QUERO avaliar o relatório do estágio, PARA dar andamento à finalização do estágio ou solicitar correções.**
 
 | Pré-Condições |  |
 | :---: | :---- |
@@ -237,6 +238,7 @@ O Sistema tem como objetivo automatizar o *workflow* para a contabilização de 
 | **RN-2** | Ao clicar na ação “Aprovar Relatório”, o sistema deve apresentar além do nome do aluno, os dados do plano inseridos na estória **\[AL.02\]**, o relatório inserido na estória **\[AL.04\]**, informações sobre as mudanças de status**.** Estes dados são somente para leitura.  |
 | **RN-3** | O formulário tem os seguintes campos:  Parecer\*  Indicador de frequência\* \- vem o valor preenchido do aluno, mas pode ser alterado.   Sugestão de Nota\*, das opções A, B, C, D, e E. O formulário também contém os botões Aprovar e Cancelar. O cancelar não faz nada e volta à tela anterior. |
 | **RN-4** | Ao aprovar, o status do aluno muda para “relatório aprovado pelo supervisor”, os dados preenchidos salvos no BD, e o sistema registra o timestamp da operação.  |
+| **RN-5** | Em uma oferta em andamento, o supervisor do aluno pode reprovar um relatório enviado. A reprovação exige um parecer, que fica disponível ao aluno, muda o status para “relatório reprovado”, registra a decisão no histórico e libera o reenvio em **[AL.04]**. |
 
 ## 
 
@@ -311,7 +313,7 @@ Aqui apresentamos uma sugestão de como priorizar e ordenar o desenvolvimento.
 | ALTA | AL.03 | COMO Aluno, EU QUERO enviar a documentação que ministrei aulas no ensino superior, PARA receber os créditos sem realizar o estágio. | Conecta com PR.02 |
 | ALTA | AL.04 | COMO Aluno, EU QUERO enviar o relatório final do estágio, PARA o professor supervisor aprovar e iniciar a finalização do estágio. |  |
 | ALTA | PS.02 | COMO Professor Supervisor, EU QUERO aprovar o plano de trabalho, PARA o aluno iniciar o estágio. |  |
-| ALTA | PS.03 | COMO Professor Supervisor, EU QUERO aprovar o relatório do estágio, PARA dar andamento a finalização do estágio. |  |
+| ALTA | PS.03 | COMO Professor Supervisor, EU QUERO avaliar o relatório do estágio, PARA dar andamento à finalização do estágio ou solicitar correções. | Mud3 libera o reenvio em AL.04 |
 | ALTA | PR.01 | COMO Professor Responsável, EU QUERO concluir o relatório do estágio de um aluno PARA dar andamento a finalização do estágio. | Pode habilitar PR.03 |
 | ALTA | PR.02 | COMO Professor Responsável, EU QUERO analisar a documentação de aulas enviada por um aluno PARA dar andamento a finalização do estágio. | Pode habilitar PR.03 |
 | MED | S.03 | COMO Secretário, EU QUERO acompanhar as ofertas, PARA ter uma visão geral do andamento do PESCD. | Basicamente a mesma que a PR.04. Pode ser tratada pelo mesmo Dev. |
