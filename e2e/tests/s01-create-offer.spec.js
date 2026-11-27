@@ -3,6 +3,7 @@ import { LoginPage } from '../pages/LoginPage.js';
 import { SecretaryOfferCreatePage } from '../pages/SecretaryOfferCreatePage.js';
 
 test.describe('S.01 - Criação de oferta pelo Secretário', () => {
+  test.use({ timezoneId: 'America/Sao_Paulo' });
   let loginPage;
   let offerCreatePage;
 
@@ -27,6 +28,21 @@ test.describe('S.01 - Criação de oferta pelo Secretário', () => {
     });
 
     await offerCreatePage.expectOfferCreated(offerName, 'André Endo');
+  });
+
+  test('deve mostrar no detalhe as mesmas datas cadastradas na oferta', async () => {
+    const offerName = `Oferta Q-3 - E2E ${Date.now()}`;
+
+    await offerCreatePage.fillAndSubmit({
+      name: offerName,
+      semester: '2026/2',
+      startDate: '2026-12-01',
+      endDate: '2026-12-02',
+      professorName: 'André Endo',
+    });
+
+    await offerCreatePage.expectOfferCreated(offerName, 'André Endo');
+    await offerCreatePage.expectOfferPeriod('01/12/2026', '02/12/2026');
   });
 
   test('deve rejeitar criação de oferta quando a data de fim não for posterior à data de início', async () => {
