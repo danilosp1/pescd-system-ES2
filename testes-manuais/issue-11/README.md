@@ -42,3 +42,5 @@ Os critérios vieram de `REQUISITOS.md`. A sessão aplicou partições válidas 
 **J05 — Datas exibidas um dia antes.** No formulário da secretaria, criar oferta com início em 01/12/2026 e fim em 02/12/2026. Após salvar, o detalhe mostra 30/11/2026 e 01/12/2026. A mensagem que aparece na captura de entrada vem da tentativa anterior com datas iguais. O reenvio com o dia seguinte foi aceito. Por inspeção, a formatação do frontend passa a data simples para `new Date` antes de formatá-la no horário local. Essa é uma hipótese para a diferença observada.
 
 **J18 — Frequência confirmada vazia.** Enviar um relatório com frequência 100% depois da aprovação do plano e abrir **Aprovar relatório** como supervisor. O resumo mostra 100%, mas o campo editável abre vazio. O esperado em PS.03 RN-3 é iniciar com a frequência informada pelo aluno. O supervisor conseguiu aprovar depois de preencher 100 manualmente.
+
+Os dois relatos foram registrados no GitHub com os passos e as capturas. [J05 — Issue #53](https://github.com/danilosp1/pescd-system-ES2/issues/53) · [J18 — Issue #54](https://github.com/danilosp1/pescd-system-ES2/issues/54)
