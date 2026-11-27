@@ -1,5 +1,6 @@
 package br.ufscar.pescd.storage;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
@@ -10,37 +11,69 @@ import org.springframework.web.client.RestClient;
 
 import java.util.List;
 
-/**
- * Serviço de armazenamento de arquivos no SeaweedFS.
- *
- * Substitui o antigo armazenamento de binários (bytea) no PostgreSQL. Cada
- * arquivo passa a ser guardado no SeaweedFS e no banco relacional guardamos
- * apenas o identificador retornado (o "fid", ex.: "3,01637037d6").
- *
- * Segue o fluxo do quick start do SeaweedFS (master + volume server):
- *   1. GET  {master}/dir/assign            -> reserva um fid e indica o volume
- *   2. POST http://{volume}/{fid}          -> grava o arquivo (multipart)
- *   3. GET  {master}/dir/lookup?volumeId=  -> descobre o volume para leitura
- *   4. GET  http://{volume}/{fid}          -> lê o arquivo
- */
 @Service
 public class SeaweedFsStorageService {
 
-    private final RestClient restClient = RestClient.create();
+    private final RestClient restClient;
     private final String masterUrl;
 
+    @Autowired
     public SeaweedFsStorageService(
             @Value("${seaweedfs.master-url:http://localhost:9333}") String masterUrl
     ) {
-        this.masterUrl = masterUrl.endsWith("/")
-                ? masterUrl.substring(0, masterUrl.length() - 1)
-                : masterUrl;
+        this(masterUrl, RestClient.create());
     }
 
-    /**
-     * Grava o conteúdo no SeaweedFS e devolve o fid a ser persistido no banco.
-     */
+    public SeaweedFsStorageService(String masterUrl, RestClient restClient) {
+        this.masterUrl = normalizeMasterUrl(masterUrl);
+        this.restClient = restClient;
+    }
+
     public String store(byte[] content, String fileName, String contentType) {
+        AssignResponse assign = requestFileAssignment();
+        String fid = assign.fid();
+        MultiValueMap<String, Object> body = buildMultipartBody(content, fileName, fid);
+
+        restClient.post()
+                .uri(buildVolumeFileUri(assign.url(), fid))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(body)
+                .retrieve()
+                .toBodilessEntity();
+
+        return fid;
+    }
+
+    public byte[] read(String fid) {
+        if (fid == null || fid.isBlank()) {
+            throw new IllegalArgumentException("Identificador de arquivo (fid) ausente.");
+        }
+        String volumeUrl = lookupVolumeUrl(fid);
+        return restClient.get()
+                .uri(buildVolumeFileUri(volumeUrl, fid))
+                .retrieve()
+                .body(byte[].class);
+    }
+
+    public void delete(String fid) {
+        if (fid == null || fid.isBlank()) {
+            return;
+        }
+        try {
+            String volumeUrl = lookupVolumeUrl(fid);
+            restClient.delete()
+                    .uri(buildVolumeFileUri(volumeUrl, fid))
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RuntimeException ignored) {
+        }
+    }
+
+    private String normalizeMasterUrl(String url) {
+        return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
+    }
+
+    private AssignResponse requestFileAssignment() {
         AssignResponse assign = restClient.get()
                 .uri(masterUrl + "/dir/assign")
                 .retrieve()
@@ -49,10 +82,10 @@ public class SeaweedFsStorageService {
         if (assign == null || assign.fid() == null || assign.url() == null) {
             throw new IllegalStateException("SeaweedFS não retornou um fid válido em /dir/assign.");
         }
+        return assign;
+    }
 
-        String fid = assign.fid();
-        String volumeUrl = assign.url();
-
+    private MultiValueMap<String, Object> buildMultipartBody(byte[] content, String fileName, String fid) {
         String safeName = (fileName != null && !fileName.isBlank()) ? fileName : fid;
         ByteArrayResource resource = new ByteArrayResource(content) {
             @Override
@@ -63,51 +96,11 @@ public class SeaweedFsStorageService {
 
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("file", resource);
-
-        restClient.post()
-                .uri("http://" + volumeUrl + "/" + fid)
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .body(body)
-                .retrieve()
-                .toBodilessEntity();
-
-        return fid;
-    }
-
-    /**
-     * Lê o conteúdo de um arquivo previamente armazenado, a partir do seu fid.
-     */
-    public byte[] read(String fid) {
-        if (fid == null || fid.isBlank()) {
-            throw new IllegalArgumentException("Identificador de arquivo (fid) ausente.");
-        }
-        String volumeUrl = lookupVolumeUrl(fid);
-        return restClient.get()
-                .uri("http://" + volumeUrl + "/" + fid)
-                .retrieve()
-                .body(byte[].class);
-    }
-
-    /**
-     * Remove um arquivo do SeaweedFS (best-effort, usado ao substituir envios).
-     */
-    public void delete(String fid) {
-        if (fid == null || fid.isBlank()) {
-            return;
-        }
-        try {
-            String volumeUrl = lookupVolumeUrl(fid);
-            restClient.delete()
-                    .uri("http://" + volumeUrl + "/" + fid)
-                    .retrieve()
-                    .toBodilessEntity();
-        } catch (RuntimeException ignored) {
-            // Remoção é best-effort: se falhar, o arquivo antigo apenas fica órfão.
-        }
+        return body;
     }
 
     private String lookupVolumeUrl(String fid) {
-        String volumeId = fid.contains(",") ? fid.substring(0, fid.indexOf(',')) : fid;
+        String volumeId = extractVolumeId(fid);
         LookupResponse lookup = restClient.get()
                 .uri(masterUrl + "/dir/lookup?volumeId=" + volumeId)
                 .retrieve()
@@ -119,13 +112,20 @@ public class SeaweedFsStorageService {
         return lookup.locations().get(0).url();
     }
 
-    // Respostas JSON do SeaweedFS (campos não usados são ignorados pelo Jackson).
-    private record AssignResponse(String fid, String url, String publicUrl) {
+    private String extractVolumeId(String fid) {
+        return fid.contains(",") ? fid.substring(0, fid.indexOf(',')) : fid;
     }
 
-    private record LookupResponse(String volumeId, List<Location> locations) {
+    private String buildVolumeFileUri(String volumeUrl, String fid) {
+        return "http://" + volumeUrl + "/" + fid;
     }
 
-    private record Location(String url, String publicUrl) {
+    record AssignResponse(String fid, String url, String publicUrl) {
+    }
+
+    record LookupResponse(String volumeId, List<Location> locations) {
+    }
+
+    record Location(String url, String publicUrl) {
     }
 }

@@ -57,11 +57,13 @@ class SupervisorProfessorControllerTest {
         assertSame(enrollment, model.get("offerStudent"));
         assertSame(plan, model.get("workPlan"));
         assertInstanceOf(ApprovePlanFormDTO.class, model.get("form"));
-        assertEquals("professor/supervisor/approve-report", controller.approveReportForm(1L, 2L, model, auth));
-        assertSame(report, model.get("report"));
-        assertEquals(95, ((ApproveReportFormDTO) model.get("form")).getFrequencia());
-        assertArrayEquals(GradeOption.values(), (GradeOption[]) model.get("gradeOptions"));
-        assertTrue(model.containsKey("statusLogs"));
+        ExtendedModelMap reportModel = new ExtendedModelMap();
+        assertEquals("professor/supervisor/approve-report", controller.approveReportForm(1L, 2L, reportModel, auth));
+        assertSame(report, reportModel.get("report"));
+        ApproveReportFormDTO reportForm = assertInstanceOf(ApproveReportFormDTO.class, reportModel.get("form"));
+        assertEquals(95, reportForm.getFrequencia());
+        assertArrayEquals(GradeOption.values(), (GradeOption[]) reportModel.get("gradeOptions"));
+        assertTrue(reportModel.containsKey("statusLogs"));
     }
 
     @Test

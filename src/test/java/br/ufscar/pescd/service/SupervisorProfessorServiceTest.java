@@ -40,6 +40,10 @@ class SupervisorProfessorServiceTest {
         when(enrollments.findByOffer_IdAndStudent_Id(1L, 2L)).thenReturn(Optional.of(enrollment));
     }
 
+    private void enrolledForUpdate() {
+        when(enrollments.findForUpdateByOffer_IdAndStudent_Id(1L, 2L)).thenReturn(Optional.of(enrollment));
+    }
+
     private void assertTransition(StudentOfferStatus previous, StudentOfferStatus next) {
         ArgumentCaptor<StatusChangeLog> captor = ArgumentCaptor.forClass(StatusChangeLog.class);
         verify(logs).save(captor.capture());
@@ -120,6 +124,7 @@ class SupervisorProfessorServiceTest {
     @Test
     void approvesReportAndPersistsFrequencyGradeAndReview() {
         enrolled();
+        enrolledForUpdate();
         enrollment.setStatus(StudentOfferStatus.RELATORIO_ENVIADO);
         Report report = new Report();
         when(reports.findByOfferStudent(enrollment)).thenReturn(Optional.of(report));
@@ -141,7 +146,7 @@ class SupervisorProfessorServiceTest {
     @ParameterizedTest
     @EnumSource(value = StudentOfferStatus.class, names = "RELATORIO_ENVIADO", mode = EnumSource.Mode.EXCLUDE)
     void refusesReportApprovalAtEveryOtherStatus(StudentOfferStatus status) {
-        enrolled();
+        enrolledForUpdate();
         enrollment.setStatus(status);
         assertThrows(IllegalArgumentException.class, () -> service.approveReport(1L, 2L, professor, new ApproveReportFormDTO()));
         verifyNoInteractions(reports, logs);

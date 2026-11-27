@@ -12,6 +12,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -56,6 +57,10 @@ class StudentOfferServiceTest {
 
     private void enrolled() {
         when(enrollments.findById(1L)).thenReturn(Optional.of(enrollment));
+    }
+
+    private void enrolledForUpdate() {
+        when(enrollments.findForUpdateById(1L)).thenReturn(Optional.of(enrollment));
     }
 
     private WorkPlanForm planForm(MultipartFile file) {
@@ -166,6 +171,7 @@ class StudentOfferServiceTest {
     @EnumSource(value = OfferStatus.class, names = "EM_ANDAMENTO", mode = EnumSource.Mode.EXCLUDE)
     void rejectsAllUploadsOnOffersOutsideInProgress(OfferStatus status) {
         enrolled();
+        enrolledForUpdate();
         enrollment.getOffer().setStatus(status);
         assertThrows(IllegalArgumentException.class, () -> service.submitWorkPlan(1L, "aluno", planForm(pdfFile())));
         assertThrows(IllegalArgumentException.class, () -> service.submitDocumentation(1L, "aluno", new DocumentationForm()));
@@ -182,7 +188,8 @@ class StudentOfferServiceTest {
             assertThrows(IllegalArgumentException.class, () -> service.submitWorkPlan(1L, "aluno", planForm(pdfFile())));
             assertThrows(IllegalArgumentException.class, () -> service.submitDocumentation(1L, "aluno", new DocumentationForm()));
         }
-        if (status != StudentOfferStatus.PLANO_APROVADO) {
+        if (status != StudentOfferStatus.PLANO_APROVADO && status != StudentOfferStatus.RELATORIO_REPROVADO) {
+            enrolledForUpdate();
             assertThrows(IllegalArgumentException.class, () -> service.submitReport(1L, "aluno", new ReportForm()));
         }
         verifyNoInteractions(storage, logs);
@@ -241,6 +248,7 @@ class StudentOfferServiceTest {
     @Test
     void submitsFinalReportAfterPlanApproval() {
         enrolled();
+        enrolledForUpdate();
         enrollment.setStatus(StudentOfferStatus.PLANO_APROVADO);
         ReportForm form = new ReportForm();
         form.setFrequency(95);
@@ -248,7 +256,12 @@ class StudentOfferServiceTest {
         when(storage.store(pdf, "plano.pdf", "application/pdf")).thenReturn("report-fid");
         StudentEnrollmentDetailsResponse details = mock(StudentEnrollmentDetailsResponse.class);
         when(mapper.toStudentEnrollmentDetails(enrollment)).thenReturn(details);
-        assertSame(details, service.submitReportForApi(1L, "aluno", form));
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            assertSame(details, service.submitReportForApi(1L, "aluno", form));
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
         ArgumentCaptor<Report> captor = ArgumentCaptor.forClass(Report.class);
         verify(reports).save(captor.capture());
         assertEquals(95, captor.getValue().getFrequency());
@@ -258,7 +271,7 @@ class StudentOfferServiceTest {
 
     @Test
     void storageFailureDoesNotSaveReportOrAdvanceStatus() {
-        enrolled();
+        enrolledForUpdate();
         enrollment.setStatus(StudentOfferStatus.PLANO_APROVADO);
         Report report = new Report();
         report.setFileFid("old-report");
@@ -267,7 +280,7 @@ class StudentOfferServiceTest {
         ReportForm form = new ReportForm();
         form.setFile(pdfFile());
         assertThrows(IllegalStateException.class, () -> service.submitReport(1L, "aluno", form));
-        verify(storage).delete("old-report");
+        verify(storage, never()).delete(any());
         verify(reports, never()).save(any());
         verifyNoInteractions(logs);
         assertEquals("old-report", report.getFileFid());

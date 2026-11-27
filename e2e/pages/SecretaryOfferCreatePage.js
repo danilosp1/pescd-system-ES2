@@ -34,6 +34,11 @@ export class SecretaryOfferCreatePage {
     await expect(this.page.getByText(`Responsável: ${expectedProfessor}`)).toBeVisible();
   }
 
+  async expectOfferPeriod(startDate, endDate) {
+    const period = this.page.locator('.page-header p');
+    await expect(period).toContainText(`${startDate} – ${endDate}`);
+  }
+
   async expectCreationError(expectedMessage) {
     await expect(this.errorAlert).toBeVisible();
     await expect(this.errorAlert).toContainText(expectedMessage);
