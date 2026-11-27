@@ -53,6 +53,9 @@ public class WorkPlan {
     /** Timestamp da aprovação pelo supervisor (PS.02). */
     private LocalDateTime supervisorApprovedAt;
 
+    /** Timestamp da reprovação do plano pelo supervisor (Mud2). */
+    private LocalDateTime supervisorRejectedAt;
+
     @PrePersist
     protected void onCreate() {
         this.submittedAt = LocalDateTime.now();

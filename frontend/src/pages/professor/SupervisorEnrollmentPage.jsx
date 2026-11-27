@@ -51,6 +51,20 @@ export default function SupervisorEnrollmentPage() {
     } catch (err) { setError(err.message); } finally { setBusy(false); }
   }
 
+  async function rejectPlan() {
+    if (!planParecer.trim()) {
+      setError('O parecer é obrigatório.');
+      return;
+    }
+    setError(''); setMessage(''); setBusy(true);
+    try {
+      await api.post(`${base}/work-plan/reject`, { parecer: planParecer });
+      setMessage('Plano de trabalho reprovado. O aluno poderá reenviar o plano.');
+      setPlanParecer('');
+      await load();
+    } catch (err) { setError(err.message); } finally { setBusy(false); }
+  }
+
   async function approveReport(event) {
     event.preventDefault();
     setError(''); setMessage(''); setBusy(true);
@@ -109,6 +123,11 @@ export default function SupervisorEnrollmentPage() {
             onClick={() => openAuthenticatedFile(`${base}/work-plan/download`)}>
             📄 Visualizar PDF do Plano
           </button>
+          {workPlan.supervisorRejectedAt && (
+            <p className="alert alert-error" style={{ marginTop: 12, marginBottom: 0 }}>
+              Plano reprovado em {formatDateTime(workPlan.supervisorRejectedAt)} — Parecer: {workPlan.supervisorParecer}
+            </p>
+          )}
         </div>
       )}
 
@@ -140,7 +159,12 @@ export default function SupervisorEnrollmentPage() {
               <textarea rows={4} value={planParecer} onChange={(e) => setPlanParecer(e.target.value)}
                 placeholder="Descreva seu parecer sobre o plano de trabalho…" required />
             </div>
-            <button className="btn" type="submit" disabled={busy}>✓ Aprovar plano</button>
+            <div className="form-actions">
+              <button className="btn" type="submit" disabled={busy}>✓ Aprovar plano</button>
+              <button className="btn btn-ghost" type="button" onClick={rejectPlan} disabled={busy}>
+                Reprovar plano
+              </button>
+            </div>
           </form>
         </div>
       )}

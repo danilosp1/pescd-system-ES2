@@ -131,8 +131,10 @@
 
         .btn-primary   { background: #1976d2; color: white; }
         .btn-secondary { background: #e5e7eb; color: #111827; }
+        .btn-danger    { background: #dc2626; color: white; }
         .btn-primary:hover   { background: #1565c0; }
         .btn-secondary:hover { background: #d1d5db; }
+        .btn-danger:hover    { background: #b91c1c; }
 
         .alert-success {
             background: #dcfce7;
@@ -208,6 +210,12 @@
 
         <div class="actions">
             <button type="submit" class="btn btn-primary" th:text="#{approvePlan.submit}">✓ Aprovar Plano</button>
+            <button type="submit"
+                    class="btn btn-danger"
+                    th:formaction="@{/professor/supervisor/ofertas/{oId}/alunos/{sId}/reprovar-plano(oId=${offerStudent.offer.id}, sId=${offerStudent.student.id})}"
+                    th:text="#{approvePlan.reject}">
+                Reprovar Plano
+            </button>
             <a th:href="@{/professor/supervisor/dashboard}" class="btn btn-secondary" th:text="#{common.cancel}">Cancelar</a>
         </div>
 

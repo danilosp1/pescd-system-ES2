@@ -6,6 +6,7 @@ import br.ufscar.pescd.dto.RejectReportFormDTO;
 import br.ufscar.pescd.dto.OfferDetailsResponse;
 import br.ufscar.pescd.dto.OfferStudentDetailsResponse;
 import br.ufscar.pescd.dto.OfferStudentSummaryResponse;
+import br.ufscar.pescd.dto.RejectPlanFormDTO;
 import br.ufscar.pescd.dto.ReportDetailsResponse;
 import br.ufscar.pescd.dto.WorkPlanDetailsResponse;
 import br.ufscar.pescd.entity.OfferStudent;
@@ -93,6 +94,18 @@ public class SupervisorProfessorApiController {
             Authentication authentication
     ) {
         return supervisorProfessorService.approvePlanForApi(
+                offerId, studentId, resolveUser(authentication), form);
+    }
+
+    @PostMapping("/{offerId}/students/{studentId}/work-plan/reject")
+    @Operation(summary = "Reprovar plano de trabalho", description = "Registra o parecer de reprovação do plano e reabre o envio para o aluno.")
+    public OfferStudentSummaryResponse rejectPlan(
+            @PathVariable Long offerId,
+            @PathVariable Long studentId,
+            @Valid @RequestBody RejectPlanFormDTO form,
+            Authentication authentication
+    ) {
+        return supervisorProfessorService.rejectPlanForApi(
                 offerId, studentId, resolveUser(authentication), form);
     }
 

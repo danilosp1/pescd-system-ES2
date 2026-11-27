@@ -5,6 +5,7 @@ import br.ufscar.pescd.dto.ApproveReportFormDTO;
 import br.ufscar.pescd.dto.OfferDetailsResponse;
 import br.ufscar.pescd.dto.OfferStudentDetailsResponse;
 import br.ufscar.pescd.dto.OfferStudentSummaryResponse;
+import br.ufscar.pescd.dto.RejectPlanFormDTO;
 import br.ufscar.pescd.dto.RejectReportFormDTO;
 import br.ufscar.pescd.dto.ReportDetailsResponse;
 import br.ufscar.pescd.dto.SupervisorDashboardDTO;
@@ -129,6 +130,7 @@ public class SupervisorProfessorService {
         WorkPlan plan = getWorkPlan(os);
         plan.setSupervisorParecer(parecer);
         plan.setSupervisorApprovedAt(LocalDateTime.now());
+        plan.setSupervisorRejectedAt(null);
         workPlanRepository.save(plan);
 
         changeStatus(os, StudentOfferStatus.PLANO_APROVADO, "Plano de trabalho aprovado pelo professor supervisor");
@@ -142,6 +144,38 @@ public class SupervisorProfessorService {
             ApprovePlanFormDTO form
     ) {
         approvePlan(offerId, studentId, professor, form.getParecer());
+        return offerApiMapper.toOfferStudentSummary(getEnrollmentForSupervisor(offerId, studentId, professor));
+    }
+
+    @Transactional
+    public void rejectPlan(Long offerId, Long studentId, User professor, String parecer) {
+
+        OfferStudent os = getEnrollmentForSupervisor(offerId, studentId, professor);
+
+        if (os.getStatus() != StudentOfferStatus.PLANO_ENVIADO) {
+            throw new IllegalArgumentException(
+                    "Ação indisponível: o status atual é \""
+                    + os.getStatus().getDisplayName() + "\".");
+        }
+
+        WorkPlan plan = getWorkPlan(os);
+        plan.setSupervisorParecer(parecer);
+        plan.setSupervisorApprovedAt(null);
+        plan.setSupervisorRejectedAt(LocalDateTime.now());
+        workPlanRepository.save(plan);
+
+        changeStatus(os, StudentOfferStatus.PLANO_REPROVADO,
+                "Plano de trabalho reprovado pelo professor supervisor");
+    }
+
+    @Transactional
+    public OfferStudentSummaryResponse rejectPlanForApi(
+            Long offerId,
+            Long studentId,
+            User professor,
+            RejectPlanFormDTO form
+    ) {
+        rejectPlan(offerId, studentId, professor, form.getParecer());
         return offerApiMapper.toOfferStudentSummary(getEnrollmentForSupervisor(offerId, studentId, professor));
     }
 

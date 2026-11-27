@@ -225,7 +225,8 @@ public class OfferApiMapper {
                 plan.getContentType(),
                 plan.getSubmittedAt(),
                 plan.getSupervisorParecer(),
-                plan.getSupervisorApprovedAt()
+                plan.getSupervisorApprovedAt(),
+                plan.getSupervisorRejectedAt()
         );
     }
 

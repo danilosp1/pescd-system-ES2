@@ -3,7 +3,8 @@ import { expect } from '@playwright/test';
 export class SupervisorEvaluationPage {
   constructor(page) {
     this.page = page;
-    this.planForm = page.locator('form').filter({ has: page.getByRole('button', { name: '✓ Aprovar plano', exact: true }) });
+    this.approvePlanButton = page.getByRole('button', { name: '✓ Aprovar plano', exact: true });
+    this.planForm = page.locator('form').filter({ has: this.approvePlanButton });
     this.reportForm = page.locator('form').filter({ has: page.getByRole('button', { name: '✓ Aprovar relatório', exact: true }) });
     this.status = page.locator('.page-header .badge');
     this.history = page.locator('.timeline');
@@ -20,7 +21,7 @@ export class SupervisorEvaluationPage {
 
   async approvePlan(parecer) {
     await this.planForm.getByRole('textbox').fill(parecer);
-    await this.planForm.getByRole('button').click();
+    await this.approvePlanButton.click();
   }
 
   async approveReport({ parecer, frequency, grade }) {

@@ -116,6 +116,29 @@ class SupervisorProfessorControllerTest {
     }
 
     @Test
+    void rejectsPlanAndRedirectsWithConfirmation() {
+        ApprovePlanFormDTO form = new ApprovePlanFormDTO();
+        form.setParecer("Ajustar o cronograma");
+        assertEquals("redirect:/professor/supervisor/dashboard",
+                controller.rejectPlan(1L, 2L, form, binding, model, auth, redirect));
+        verify(service).rejectPlan(1L, 2L, professor, "Ajustar o cronograma");
+        assertTrue(redirect.getFlashAttributes().containsKey("successMessage"));
+    }
+
+    @Test
+    void redisplaysPendingPlanWhenRejectOpinionIsMissing() throws Exception {
+        enrollment.setStatus(StudentOfferStatus.PLANO_ENVIADO);
+        MockMvcBuilders.standaloneSetup(controller).build()
+                .perform(post("/professor/supervisor/ofertas/1/alunos/2/reprovar-plano").principal(auth))
+                .andExpect(status().isOk())
+                .andExpect(view().name("professor/supervisor/approve-plan"))
+                .andExpect(model().attributeHasFieldErrors("form", "parecer"))
+                .andExpect(model().attribute("offerStudent", enrollment))
+                .andExpect(model().attribute("workPlan", plan));
+        verify(service, never()).rejectPlan(anyLong(), anyLong(), any(), any());
+    }
+
+    @Test
     void downloadsPlanAndReportAsInlinePdf() {
         plan.setContentType("application/pdf");
         plan.setFileName("plano.pdf");

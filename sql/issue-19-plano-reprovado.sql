@@ -1,0 +1,25 @@
+BEGIN;
+
+ALTER TABLE offer_students
+    DROP CONSTRAINT IF EXISTS offer_students_status_check,
+    ADD CONSTRAINT offer_students_status_check CHECK (status IN (
+        'NAO_ENVIADO', 'PLANO_ENVIADO', 'PLANO_APROVADO', 'PLANO_REPROVADO',
+        'DOCUMENTACAO_ENVIADA', 'RELATORIO_ENVIADO', 'RELATORIO_REPROVADO',
+        'RELATORIO_APROVADO_SUPERVISOR', 'CONCLUIDO_RESPONSAVEL'
+    ));
+
+ALTER TABLE status_change_logs
+    DROP CONSTRAINT IF EXISTS status_change_logs_previous_status_check,
+    DROP CONSTRAINT IF EXISTS status_change_logs_new_status_check,
+    ADD CONSTRAINT status_change_logs_previous_status_check CHECK (previous_status IN (
+        'NAO_ENVIADO', 'PLANO_ENVIADO', 'PLANO_APROVADO', 'PLANO_REPROVADO',
+        'DOCUMENTACAO_ENVIADA', 'RELATORIO_ENVIADO', 'RELATORIO_REPROVADO',
+        'RELATORIO_APROVADO_SUPERVISOR', 'CONCLUIDO_RESPONSAVEL'
+    )),
+    ADD CONSTRAINT status_change_logs_new_status_check CHECK (new_status IN (
+        'NAO_ENVIADO', 'PLANO_ENVIADO', 'PLANO_APROVADO', 'PLANO_REPROVADO',
+        'DOCUMENTACAO_ENVIADA', 'RELATORIO_ENVIADO', 'RELATORIO_REPROVADO',
+        'RELATORIO_APROVADO_SUPERVISOR', 'CONCLUIDO_RESPONSAVEL'
+    ));
+
+COMMIT;

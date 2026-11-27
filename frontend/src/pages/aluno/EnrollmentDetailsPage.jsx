@@ -49,6 +49,9 @@ export default function EnrollmentDetailsPage() {
                 </Link>
               </>
             )}
+            {status === 'PLANO_REPROVADO' && (
+              <Link className="btn" to={`/aluno/ofertas/${id}/plano`}>Reenviar plano (AL.02)</Link>
+            )}
             {canSendReport && (
               <Link className="btn" to={`/aluno/ofertas/${id}/relatorio`}>
                 {reportRejected ? 'Reenviar relatório' : 'Enviar relatório (AL.04)'}
@@ -74,6 +77,12 @@ export default function EnrollmentDetailsPage() {
               <>
                 <dt>Parecer supervisor</dt><dd>{workPlan.supervisorParecer}</dd>
                 <dt>Aprovado em</dt><dd>{formatDateTime(workPlan.supervisorApprovedAt)}</dd>
+              </>
+            )}
+            {workPlan.supervisorRejectedAt && (
+              <>
+                <dt>Parecer de reprovação</dt><dd>{workPlan.supervisorParecer}</dd>
+                <dt>Reprovado em</dt><dd>{formatDateTime(workPlan.supervisorRejectedAt)}</dd>
               </>
             )}
           </dl>
